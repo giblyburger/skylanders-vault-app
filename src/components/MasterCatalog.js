@@ -61,36 +61,24 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const categories = unique(catalog.cards.map((card) => card.category));
     const elements = unique(catalog.cards.map((card) => card.element).filter((element) => element && element !== 'None'));
     const photographed = catalog.cards.filter((card) => card.photoUrl).length;
+    const featureNames = ['Spyro', 'Trigger Happy', 'Stealth Elf', 'Tree Rex', 'Snap Shot'];
+    const featured = featureNames.map((name) => catalog.cards.find((card) => card.name === name && card.photoUrl)).filter(Boolean);
     container.innerHTML = `
       <header class="catalog-hero">
-        <div>
-          <p class="eyebrow">Portal Master Database</p>
-          <h2>Every piece. Every picture. One Master Vault.</h2>
-          <p>Browse ${catalog.meta.totalCards} individual toys, variants, Traps, vehicles, crystals, items, packs, Portals, villain references, and technical records. Every card has its own exact product photo.</p>
+        <div class="catalog-hero__copy">
+          <p class="eyebrow">A living collection archive</p>
+          <h2>The whole collection, beautifully organized.</h2>
+          <p>Explore every figure, Trap, vehicle, crystal, Portal, pack, and variant in one calm, photo-first gallery.</p>
+          <div class="catalog-hero__numbers" aria-label="Master catalog totals">
+            <span><strong>${catalog.meta.totalCards}</strong> pieces</span>
+            <span><strong>${photographed}</strong> exact photos</span>
+            <span><strong>${catalog.meta.linkedScanIdentities}</strong> scan links</span>
+          </div>
         </div>
-        <div class="catalog-hero__numbers" aria-label="Master catalog totals">
-          <span class="catalog-hero__photo-count"><strong>${photographed}/${catalog.meta.totalCards}</strong> photographed</span>
-          <span><strong>${catalog.meta.collectorItemPages}</strong> item pages checked</span>
-          <span><strong>${catalog.meta.marketListings}</strong> market listings retained</span>
-          <span><strong>${catalog.meta.linkedScanIdentities}</strong> exact scan links</span>
+        <div class="catalog-hero__gallery" aria-label="Featured collection pieces">
+          ${featured.map((card, index) => `<figure style="--hero-index:${index}"><img src="${escapeHtml(card.photoUrl)}" alt="${escapeHtml(card.name)}"><figcaption>${escapeHtml(card.name)}</figcaption></figure>`).join('')}
         </div>
       </header>
-
-      <section class="scan-station" aria-labelledby="scan-station-title">
-        <div class="scan-station__orb" aria-hidden="true"><i></i></div>
-        <div class="scan-station__copy">
-          <p class="eyebrow">Scanner intake</p>
-          <h3 id="scan-station-title">Place a toy on your reader</h3>
-          <p data-scan-status>${escapeHtml(state.status)}</p>
-        </div>
-        <form class="scan-station__form" data-scan-form>
-          <label>
-            <span>Reader result</span>
-            <input data-scan-input autocomplete="off" placeholder="Character ID : Variant ID, or a saved UID">
-          </label>
-          <button class="button button--primary" type="submit">Identify</button>
-        </form>
-      </section>
 
       <section class="catalog-progress" data-catalog-progress></section>
 
@@ -113,6 +101,24 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           <button class="button" type="button" data-catalog-clear>Clear filters</button>
         </div>
       </div>
+      <details class="scan-station">
+        <summary><span>Reader scanner</span><small data-scan-status>${escapeHtml(state.status)}</small></summary>
+        <div class="scan-station__panel">
+          <div class="scan-station__orb" aria-hidden="true"><i></i></div>
+          <div class="scan-station__copy">
+            <p class="eyebrow">Scanner intake</p>
+            <h3 id="scan-station-title">Identify a physical piece</h3>
+            <p>Use a Character ID and Variant ID, or a UID you have already saved.</p>
+          </div>
+          <form class="scan-station__form" data-scan-form>
+            <label>
+              <span>Reader result</span>
+              <input data-scan-input autocomplete="off" placeholder="Character ID : Variant ID, or saved UID">
+            </label>
+            <button class="button button--primary" type="submit">Identify</button>
+          </form>
+        </div>
+      </details>
       <div class="catalog-grid" data-catalog-grid data-layout="photos"></div>
       <button class="button catalog-load-more" type="button" data-catalog-more hidden>Show more cards</button>
       <footer class="catalog-sources">
@@ -227,7 +233,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       button.setAttribute('aria-pressed', String(button.dataset.catalogLayout === state.layout));
     });
     container.querySelector('[data-catalog-more]').hidden = state.limit >= filtered.length;
-    container.querySelector('[data-scan-status]').textContent = state.status;
+    container.querySelectorAll('[data-scan-status]').forEach((node) => { node.textContent = state.status; });
   }
 
   function cardMarkup(card, record) {

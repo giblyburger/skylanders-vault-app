@@ -1,17 +1,17 @@
-const CACHE_NAME = 'gibly-master-v3';
+const CACHE_NAME = 'gibly-gallery-v1';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './src/app.js?v=master-v3',
+  './src/app.js?v=gallery-v1',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=master-v3',
-  './src/styles/main.css?v=master-v3',
+  './src/components/MasterCatalog.js?v=gallery-v1',
+  './src/styles/gallery.css?v=gallery-v1',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
