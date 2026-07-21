@@ -2,7 +2,7 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=cloud-nfc-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=collector-cards-v1';
 import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
@@ -20,6 +20,14 @@ const DATA_URLS = {
   traps: 'src/data/traps.json',
   catalog: 'src/data/master-catalog.json'
 };
+const UNRELEASED_CARD_IDS = new Set([
+  'catalog-11513604',
+  'catalog-11513621',
+  'catalog-11513645',
+  'catalog-11513653',
+  'catalog-11513673',
+  'catalog-58496'
+]);
 
 const app = {
   elements: {},
@@ -510,7 +518,7 @@ function exportBackup() {
 }
 
 function isCollectibleCard(card) {
-  return !['Prototype / Unreleased', 'Villain Reference'].includes(card?.category);
+  return !UNRELEASED_CARD_IDS.has(card?.id) && !['Pack / Set', 'Prototype / Unreleased', 'Villain Reference'].includes(card?.category);
 }
 
 async function importBackup(event) {

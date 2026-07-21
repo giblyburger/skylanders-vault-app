@@ -11,6 +11,14 @@ const GAME_SHORT = {
 
 const CONDITION_OPTIONS = ['Not graded', 'New / sealed', 'Like new', 'Good', 'Played', 'Damaged', 'Parts / repair'];
 const PACKAGING_OPTIONS = ['Loose', 'Carded / sealed', 'Boxed', 'Package only'];
+const UNRELEASED_CARD_IDS = new Set([
+  'catalog-11513604',
+  'catalog-11513621',
+  'catalog-11513645',
+  'catalog-11513653',
+  'catalog-11513673',
+  'catalog-58496'
+]);
 
 export function createMasterCatalog(container, dialog, catalog, callbacks) {
   const cardsById = new Map(catalog.cards.map((card) => [card.id, card]));
@@ -63,23 +71,22 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const games = unique(collectibleCards.map((card) => card.game).filter((game) => game && game !== 'Unknown'));
     const categories = unique(collectibleCards.map((card) => card.category));
     const elements = unique(collectibleCards.map((card) => card.element).filter((element) => element && element !== 'None'));
-    const photographed = collectibleCards.filter((card) => card.photoUrl).length;
     const featureNames = ['Spyro', 'Trigger Happy', 'Stealth Elf', 'Tree Rex', 'Snap Shot'];
-    const featured = featureNames.map((name) => collectibleCards.find((card) => card.name === name && card.photoUrl)).filter(Boolean);
+    const featured = featureNames.map((name) => collectibleCards.find((card) => card.name === name)).filter(Boolean);
     container.innerHTML = `
       <header class="catalog-hero">
         <div class="catalog-hero__copy">
           <p class="eyebrow">Your collection starts here</p>
           <h2>Every hero. One powerful vault.</h2>
-          <p>A pocket-ready home for every figure, Trap, vehicle, crystal, Portal, pack, and variant—built for fast scanning and effortless collecting.</p>
+          <p>A pocket-ready home for every individually released figure, Trap, vehicle, crystal, Portal, item, and variant—built for fast scanning and effortless collecting.</p>
           <div class="catalog-hero__numbers" aria-label="Master catalog totals">
             <span><strong>${collectibleCards.length}</strong> obtainable pieces</span>
-            <span><strong>${photographed}</strong> exact photos</span>
+            <span><strong>${collectibleCards.length}</strong> original card artworks</span>
             <span><strong>${catalog.meta.linkedScanIdentities}</strong> scan links</span>
           </div>
         </div>
         <div class="catalog-hero__gallery" aria-label="Featured collection pieces">
-          ${featured.map((card, index) => `<figure style="--hero-index:${index}"><img src="${escapeHtml(card.photoUrl)}" alt="${escapeHtml(card.name)}"><figcaption>${escapeHtml(card.name)}</figcaption></figure>`).join('')}
+          ${featured.map((card, index) => `<figure style="--hero-index:${index}"><img src="${escapeHtml(cardArtworkUrl(card))}" alt="${escapeHtml(card.name)} collector card"><figcaption>${escapeHtml(card.name)}</figcaption></figure>`).join('')}
         </div>
       </header>
 
@@ -98,7 +105,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         <p data-catalog-result-count></p>
         <div class="catalog-results-tools">
           <div class="catalog-layout-toggle" role="group" aria-label="Catalog view">
-            <button class="button" type="button" data-catalog-layout="photos" aria-pressed="true">Photo wall</button>
+            <button class="button" type="button" data-catalog-layout="photos" aria-pressed="true">Card wall</button>
             <button class="button" type="button" data-catalog-layout="cards" aria-pressed="false">Info cards</button>
           </div>
           <button class="button" type="button" data-catalog-clear>Clear filters</button>
@@ -257,7 +264,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     filtered.sort((left, right) => (query ? left.searchRank - right.searchRank : 0) || activeSorter(left, right));
 
     const visible = filtered.slice(0, state.limit);
-    container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} items · ${filtered.filter(({ card }) => card.photoUrl).length} photos · showing ${visible.length}`;
+    container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} individual cards · showing ${visible.length}`;
     const grid = container.querySelector('[data-catalog-grid]');
     grid.dataset.layout = state.layout;
     grid.innerHTML = visible.map(({ card, record }) => cardMarkup(card, record)).join('') || emptyMarkup();
@@ -272,15 +279,23 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const owned = record.copies.length;
     const scanned = record.copies.filter((copy) => copy.uid).length;
     const identity = card.scanIdentities[0];
-    const compatibilityCount = Object.values(card.compatibility || {}).filter((value) => value === 'yes').length;
+    const compatibilityGames = Object.entries(card.compatibility || {}).filter(([, value]) => String(value).startsWith('yes')).map(([game]) => GAME_SHORT[game] || game);
+    const compatibilityCount = compatibilityGames.length;
     const verification = verificationLabel(card.verification?.status);
+    const cardArt = cardArtworkUrl(card);
+    const identityLine = [card.releaseYear, identity?.charId ? `ID ${identity.charId}` : '', identity?.variantId ? `VARIANT ${identity.variantId}` : ''].filter(Boolean).join(' · ');
     return `<article class="catalog-card" data-owned="${owned > 0}" style="--card-el:${elementColor(card.element)}">
       <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
-        ${card.photoUrl ? `<img loading="lazy" decoding="async" src="${escapeHtml(card.photoUrl)}" alt="${escapeHtml(card.name)} physical piece" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">` : ''}
-        <span class="catalog-card__fallback" ${card.photoUrl ? 'hidden' : ''} aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
+        <img class="catalog-card__art" loading="lazy" decoding="async" src="${escapeHtml(cardArt)}" alt="Original collector-card artwork of ${escapeHtml(card.name)}" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
+        <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
         ${owned ? `<i class="catalog-card__owned">Owned ×${owned}</i>` : ''}
-        <span class="catalog-card__photo-caption"><small>${escapeHtml(card.category)}</small><strong>${escapeHtml(card.name)}</strong></span>
-        <span class="catalog-card__zoom-hint" aria-hidden="true">View photo + info</span>
+        <span class="catalog-card__photo-caption">
+          <small>${escapeHtml([card.element !== 'None' ? card.element : '', card.role || card.category, card.game].filter(Boolean).join(' · '))}</small>
+          <strong>${escapeHtml(card.name)}</strong>
+          <em>${escapeHtml(identityLine || card.category)}</em>
+          <b>${compatibilityGames.length ? `Works with: ${escapeHtml(compatibilityGames.join(' · '))}` : escapeHtml(card.category)}</b>
+        </span>
+        <span class="catalog-card__zoom-hint" aria-hidden="true">View card + info</span>
       </button>
       <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault">+</button>
       <div class="catalog-card__body">
@@ -355,8 +370,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     dialog.innerHTML = `<form class="catalog-detail" data-catalog-form>
       <header class="catalog-detail__header" style="--card-el:${elementColor(card.element)}">
         <div class="catalog-detail__photos">
-          ${card.photoUrl ? photoButton(card.photoUrl, `${card.name} physical piece`, 'Exact product photo') : '<span class="catalog-card__fallback">GV</span>'}
-          ${card.artUrl ? photoButton(card.artUrl, `${card.baseName} character artwork`, 'Character artwork') : ''}
+          ${photoButton(cardArtworkUrl(card), `Original collector-card artwork of ${card.name}`, 'Collector card')}
         </div>
         <div>
           <p class="eyebrow">${escapeHtml(card.category)} · ${escapeHtml(card.game || 'Reference record')}</p>
@@ -716,6 +730,10 @@ function fact(label, value) {
   return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
 }
 
+function cardArtworkUrl(card) {
+  return `assets/card-art/cards/${encodeURIComponent(card.id)}.webp`;
+}
+
 function photoButton(src, alt, label) {
   return `<button class="catalog-detail__photo-button" type="button" data-photo-viewer-src="${escapeHtml(src)}" data-photo-viewer-alt="${escapeHtml(alt)}" data-photo-viewer-label="${escapeHtml(label)}" aria-label="Enlarge ${escapeHtml(label.toLowerCase())}"><img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"><span>${escapeHtml(label)} · Tap to enlarge</span></button>`;
 }
@@ -805,7 +823,7 @@ function normalizePhoto(photo) {
 }
 
 function isCollectibleCard(card) {
-  return !['Prototype / Unreleased', 'Villain Reference'].includes(card?.category);
+  return !UNRELEASED_CARD_IDS.has(card?.id) && !['Pack / Set', 'Prototype / Unreleased', 'Villain Reference'].includes(card?.category);
 }
 
 function cssEscape(value) {
