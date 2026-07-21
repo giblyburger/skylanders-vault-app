@@ -21,6 +21,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     element: '',
     ownership: '',
     sort: 'name',
+    layout: 'photos',
     limit: 72,
     activeCardId: '',
     status: 'Ready for a Portal or NFC reader.'
@@ -59,14 +60,16 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const games = unique(catalog.cards.map((card) => card.game).filter((game) => game && game !== 'Unknown'));
     const categories = unique(catalog.cards.map((card) => card.category));
     const elements = unique(catalog.cards.map((card) => card.element).filter((element) => element && element !== 'None'));
+    const photographed = catalog.cards.filter((card) => card.photoUrl).length;
     container.innerHTML = `
       <header class="catalog-hero">
         <div>
           <p class="eyebrow">Portal Master Database</p>
-          <h2>${catalog.meta.totalCards} source-backed Master Vault cards</h2>
-          <p>Individual toys, variants, Traps, vehicles, crystals, items, packs, Portals, villain references, and technical scan records are separated so retail pieces are never confused with internal game data.</p>
+          <h2>Every piece. Every picture. One Master Vault.</h2>
+          <p>Browse ${catalog.meta.totalCards} individual toys, variants, Traps, vehicles, crystals, items, packs, Portals, villain references, and technical records. Every card has its own exact product photo.</p>
         </div>
         <div class="catalog-hero__numbers" aria-label="Master catalog totals">
+          <span class="catalog-hero__photo-count"><strong>${photographed}/${catalog.meta.totalCards}</strong> photographed</span>
           <span><strong>${catalog.meta.collectorItemPages}</strong> item pages checked</span>
           <span><strong>${catalog.meta.marketListings}</strong> market listings retained</span>
           <span><strong>${catalog.meta.linkedScanIdentities}</strong> exact scan links</span>
@@ -102,9 +105,15 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
       <div class="catalog-results-head">
         <p data-catalog-result-count></p>
-        <button class="button" type="button" data-catalog-clear>Clear filters</button>
+        <div class="catalog-results-tools">
+          <div class="catalog-layout-toggle" role="group" aria-label="Catalog view">
+            <button class="button" type="button" data-catalog-layout="photos" aria-pressed="true">Photo wall</button>
+            <button class="button" type="button" data-catalog-layout="cards" aria-pressed="false">Info cards</button>
+          </div>
+          <button class="button" type="button" data-catalog-clear>Clear filters</button>
+        </div>
       </div>
-      <div class="catalog-grid" data-catalog-grid></div>
+      <div class="catalog-grid" data-catalog-grid data-layout="photos"></div>
       <button class="button catalog-load-more" type="button" data-catalog-more hidden>Show more cards</button>
       <footer class="catalog-sources">
         <p><strong>Accuracy policy:</strong> ${escapeHtml(catalog.meta.accuracyPolicy)} Market prices are dated snapshots, not permanent values. Community gameplay guides are labeled separately from manufacturer facts.</p>
@@ -140,6 +149,13 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     container.querySelector('[data-catalog-more]').addEventListener('click', () => {
       state.limit += 72;
       render();
+    });
+
+    container.querySelectorAll('[data-catalog-layout]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.layout = button.dataset.catalogLayout;
+        render();
+      });
     });
 
     container.querySelector('[data-scan-form]').addEventListener('submit', (event) => {
@@ -202,8 +218,14 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     };
     filtered.sort(sorters[state.sort] || sorters.name);
 
-    container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} cards found · showing ${Math.min(filtered.length, state.limit)}`;
-    container.querySelector('[data-catalog-grid]').innerHTML = filtered.slice(0, state.limit).map(({ card, record }) => cardMarkup(card, record)).join('') || emptyMarkup();
+    const visible = filtered.slice(0, state.limit);
+    container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} items · ${filtered.filter(({ card }) => card.photoUrl).length} photos · showing ${visible.length}`;
+    const grid = container.querySelector('[data-catalog-grid]');
+    grid.dataset.layout = state.layout;
+    grid.innerHTML = visible.map(({ card, record }) => cardMarkup(card, record)).join('') || emptyMarkup();
+    container.querySelectorAll('[data-catalog-layout]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.catalogLayout === state.layout));
+    });
     container.querySelector('[data-catalog-more]').hidden = state.limit >= filtered.length;
     container.querySelector('[data-scan-status]').textContent = state.status;
   }
@@ -216,9 +238,11 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const verification = verificationLabel(card.verification?.status);
     return `<article class="catalog-card" data-owned="${owned > 0}" style="--card-el:${elementColor(card.element)}">
       <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
-        ${card.photoUrl ? `<img loading="lazy" src="${escapeHtml(card.photoUrl)}" alt="${escapeHtml(card.name)} physical piece" onerror="this.hidden=true;this.nextElementSibling.hidden=false">` : ''}
+        ${card.photoUrl ? `<img loading="lazy" decoding="async" src="${escapeHtml(card.photoUrl)}" alt="${escapeHtml(card.name)} physical piece" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">` : ''}
         <span class="catalog-card__fallback" ${card.photoUrl ? 'hidden' : ''} aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
         ${owned ? `<i class="catalog-card__owned">Owned ×${owned}</i>` : ''}
+        <span class="catalog-card__photo-caption"><small>${escapeHtml(card.category)}</small><strong>${escapeHtml(card.name)}</strong></span>
+        <span class="catalog-card__zoom-hint" aria-hidden="true">View photo + info</span>
       </button>
       <div class="catalog-card__body">
         <div class="catalog-card__kicker"><span>${escapeHtml(card.category)}</span><span>${escapeHtml(card.game || 'Reference')}</span></div>
@@ -291,8 +315,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     dialog.innerHTML = `<form class="catalog-detail" data-catalog-form>
       <header class="catalog-detail__header" style="--card-el:${elementColor(card.element)}">
         <div class="catalog-detail__photos">
-          ${card.photoUrl ? `<img src="${escapeHtml(card.photoUrl)}" alt="${escapeHtml(card.name)} physical piece">` : '<span class="catalog-card__fallback">GV</span>'}
-          ${card.artUrl ? `<img src="${escapeHtml(card.artUrl)}" alt="${escapeHtml(card.baseName)} character artwork">` : ''}
+          ${card.photoUrl ? photoButton(card.photoUrl, `${card.name} physical piece`, 'Exact product photo') : '<span class="catalog-card__fallback">GV</span>'}
+          ${card.artUrl ? photoButton(card.artUrl, `${card.baseName} character artwork`, 'Character artwork') : ''}
         </div>
         <div>
           <p class="eyebrow">${escapeHtml(card.category)} · ${escapeHtml(card.game || 'Reference record')}</p>
@@ -357,6 +381,11 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       </section>
 
       <footer class="catalog-detail__actions"><button class="button" type="button" data-catalog-close>Close</button><button class="button button--primary" type="submit">Save card</button></footer>
+      <div class="catalog-photo-viewer" data-photo-viewer hidden aria-hidden="true">
+        <button class="icon-button catalog-photo-viewer__close" type="button" data-photo-viewer-close aria-label="Close enlarged photo">×</button>
+        <img data-photo-viewer-image alt="">
+        <p data-photo-viewer-caption></p>
+      </div>
     </form>`;
 
     const form = dialog.querySelector('[data-catalog-form]');
@@ -380,6 +409,25 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         saveRecord(card.id, updated);
         renderDialog(card);
       });
+    });
+    const viewer = dialog.querySelector('[data-photo-viewer]');
+    const closeViewer = () => {
+      viewer.hidden = true;
+      viewer.setAttribute('aria-hidden', 'true');
+    };
+    dialog.querySelectorAll('[data-photo-viewer-src]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const image = viewer.querySelector('[data-photo-viewer-image]');
+        image.src = button.dataset.photoViewerSrc;
+        image.alt = button.dataset.photoViewerAlt;
+        viewer.querySelector('[data-photo-viewer-caption]').textContent = button.dataset.photoViewerLabel;
+        viewer.hidden = false;
+        viewer.setAttribute('aria-hidden', 'false');
+        viewer.querySelector('[data-photo-viewer-close]').focus();
+      });
+    });
+    viewer.addEventListener('click', (event) => {
+      if (event.target === viewer || event.target.closest('[data-photo-viewer-close]')) closeViewer();
     });
   }
 
@@ -465,6 +513,10 @@ function unique(values) {
 
 function fact(label, value) {
   return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
+}
+
+function photoButton(src, alt, label) {
+  return `<button class="catalog-detail__photo-button" type="button" data-photo-viewer-src="${escapeHtml(src)}" data-photo-viewer-alt="${escapeHtml(alt)}" data-photo-viewer-label="${escapeHtml(label)}" aria-label="Enlarge ${escapeHtml(label.toLowerCase())}"><img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"><span>${escapeHtml(label)} · Tap to enlarge</span></button>`;
 }
 
 function compatibilityMarkup(game, support) {

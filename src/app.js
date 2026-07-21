@@ -2,7 +2,7 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=master-v2';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=master-v3';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -38,6 +38,7 @@ const app = {
 };
 
 const refs = {
+  appRoot: document.querySelector('[data-app-root]'),
   summary: document.querySelector('[data-summary]'),
   villainBoard: document.querySelector('[data-villain-board]'),
   trapRack: document.querySelector('[data-trap-rack]'),
@@ -94,6 +95,7 @@ async function init() {
 
     populateFilters();
     wireEvents();
+    setView('catalog');
     renderAll();
     registerServiceWorker();
   } catch (error) {
@@ -219,6 +221,7 @@ function wireEvents() {
 }
 
 function setView(viewName) {
+  refs.appRoot.dataset.activeView = viewName;
   refs.tabs.forEach((tab) => {
     const active = tab.dataset.viewTab === viewName;
     tab.classList.toggle('is-active', active);
@@ -229,6 +232,9 @@ function setView(viewName) {
     const active = view.dataset.view === viewName;
     view.hidden = !active;
   });
+
+  if (!['board', 'rack'].includes(viewName)) refs.placementDock.hidden = true;
+  else if (app.selectedTrapId) renderPlacementDock(app.trapsById.get(app.selectedTrapId));
 }
 
 function renderAll() {
@@ -238,6 +244,15 @@ function renderAll() {
 
   renderPlacementDock(selectedTrap);
   renderSummary(refs.summary, calculateProgress(app));
+  const catalogOwned = Object.values(app.state.catalog || {}).filter((record) => record.copies?.length).length;
+  const catalogTotal = app.catalog?.meta.totalCards || app.catalog?.cards.length || 0;
+  const catalogPercent = catalogTotal ? Math.round((catalogOwned / catalogTotal) * 100) : 0;
+  const meter = document.querySelector('[data-overall-meter]');
+  const meterLabel = document.querySelector('[data-overall-label]');
+  if (meter && meterLabel) {
+    meter.style.setProperty('--value', catalogPercent + '%');
+    meterLabel.textContent = catalogOwned + ' of ' + catalogTotal + ' collected';
+  }
   renderVillainBoard(refs.villainBoard, {
     elements: app.elements,
     villains: app.villains,

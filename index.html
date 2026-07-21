@@ -20,8 +20,8 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="public/app-icon.svg">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="src/styles/main.css?v=master-v2">
-    <script type="module" src="src/app.js?v=master-v2"></script>
+    <link rel="stylesheet" href="src/styles/main.css?v=master-v3">
+    <script type="module" src="src/app.js?v=master-v3"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -76,14 +76,14 @@
       <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
 
       <nav class="view-tabs" role="tablist" aria-label="Collection views">
-        <button class="view-tab is-active" type="button" role="tab" aria-selected="true" data-view-tab="board">Villain Board</button>
+        <button class="view-tab is-active" type="button" role="tab" aria-selected="true" data-view-tab="catalog">Master Vault</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="board">Villain Board</button>
         <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="rack">Trap Rack</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="catalog">Master Catalog</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="reference">Board Photo</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="reference">Board Guide</button>
       </nav>
 
       <main>
-        <section class="view" data-view="board">
+        <section class="view" data-view="board" hidden>
           <div class="board-stage" data-board-stage>
             <div class="vault-board" data-board-shell>
               <div class="board-plaque">
@@ -111,7 +111,7 @@
           </div>
         </section>
 
-        <section class="view" data-view="catalog" hidden>
+        <section class="view" data-view="catalog">
           <div class="catalog-shell" data-master-catalog></div>
         </section>
 
