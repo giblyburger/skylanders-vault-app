@@ -27,7 +27,7 @@
         const savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
         if (displayRequest === 'ipad' || (displayRequest !== 'standard' && savedDisplay === 'ipad')) {
           document.documentElement.dataset.displayMode = 'ipad';
-          document.querySelector('[data-app-manifest]').href = 'manifest-ipad.webmanifest';
+          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
         }
       } catch (error) {}
     </script>

@@ -3,7 +3,7 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './manifest-ipad.webmanifest',
+  './public/manifest-ipad.webmanifest',
   './src/app.js?v=ipad-display-v1',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',

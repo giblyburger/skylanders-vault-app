@@ -313,7 +313,7 @@ function applyDisplayMode(enabled, options = {}) {
   document.documentElement.dataset.displayMode = mode;
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = enabled ? 'manifest-ipad.webmanifest' : 'manifest.webmanifest';
+  if (manifest) manifest.href = enabled ? 'public/manifest-ipad.webmanifest' : 'manifest.webmanifest';
 
   if (refs.displayModeButton) {
     refs.displayModeButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
