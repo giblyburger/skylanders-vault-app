@@ -20,8 +20,8 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="public/app-icon.svg">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="src/styles/gallery.css?v=ios-dark-v2">
-    <script type="module" src="src/app.js?v=ios-dark-v2"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=cloud-nfc-v1">
+    <script type="module" src="src/app.js?v=cloud-nfc-v1"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -46,6 +46,7 @@
         </div>
 
         <div class="header-actions" aria-label="Backup and app actions">
+          <span class="sync-status" data-sync-status data-state="connecting" role="status" aria-live="polite"><i></i><span>Connecting</span></span>
           <button class="button button--primary" type="button" data-export>Export</button>
           <button class="button" type="button" data-import>Import</button>
           <button class="button button--danger" type="button" data-reset>Reset</button>

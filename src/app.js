@@ -2,7 +2,8 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=ios-dark-v2';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=cloud-nfc-v1';
+import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -37,6 +38,7 @@ const app = {
   },
   editor: null,
   catalogController: null,
+  cloudSync: null,
   selectedTrapId: '',
   lastPlacement: null,
   placementTimer: null
@@ -65,7 +67,8 @@ const refs = {
   catalogDialog: document.querySelector('[data-catalog-dialog]'),
   toast: document.querySelector('[data-toast]'),
   boardStage: document.querySelector('[data-board-stage]'),
-  boardShell: document.querySelector('[data-board-shell]')
+  boardShell: document.querySelector('[data-board-shell]'),
+  syncStatus: document.querySelector('[data-sync-status]')
 };
 
 init();
@@ -91,18 +94,35 @@ async function init() {
     app.catalogController = createMasterCatalog(refs.catalogRoot, refs.catalogDialog, catalog, {
       getState: () => app.state,
       onSave: saveCatalogRecord,
-      onToast: showToast
+      onToast: showToast,
+      onUploadPhoto: (...args) => app.cloudSync?.uploadPhoto(...args),
+      onDeletePhoto: (...args) => app.cloudSync?.deletePhoto(...args)
     });
     window.skylandersScan = {
       identify: (scan) => app.catalogController.identifyScan(scan),
       openCard: (cardId) => app.catalogController.open(cardId),
       catalogVersion: catalog.meta.generatedAt
     };
+    window.skylandersNfc = {
+      identify: (scan) => app.catalogController.identifyScan(scan),
+      openCard: (cardId) => app.catalogController.open(cardId)
+    };
 
     populateFilters();
     wireEvents();
     setView('catalog');
     renderAll();
+    app.cloudSync = createCloudSync({
+      getState: () => app.state,
+      normalizeState,
+      applyState: (nextState) => {
+        app.state = normalizeState(nextState);
+        persistState({ cloud: false });
+        renderAll();
+      },
+      onStatus: updateSyncStatus
+    });
+    app.cloudSync.start();
     registerServiceWorker();
   } catch (error) {
     showFatal(error);
@@ -116,7 +136,7 @@ async function loadJson(url) {
 }
 
 function freshState() {
-  return { version: 5, villains: {}, traps: {}, catalog: {} };
+  return { version: 6, villains: {}, traps: {}, catalog: {} };
 }
 
 function loadState() {
@@ -153,7 +173,7 @@ function normalizeState(raw) {
     clean.traps[trapId] = normalized;
   });
 
-  const catalogIds = new Set((app.catalog?.cards || []).map((card) => card.id));
+  const catalogIds = new Set((app.catalog?.cards || []).filter(isCollectibleCard).map((card) => card.id));
   Object.entries(source.catalog || {}).forEach(([cardId, record]) => {
     if (!catalogIds.has(cardId)) return;
     const copies = Array.isArray(record?.copies) ? record.copies : [];
@@ -168,7 +188,8 @@ function normalizeState(raw) {
         storage: String(copy?.storage || ''),
         acquired: String(copy?.acquired || ''),
         paid: String(copy?.paid || ''),
-        notes: String(copy?.notes || '')
+        notes: String(copy?.notes || ''),
+        photos: Array.isArray(copy?.photos) ? copy.photos.map(normalizePhoto).filter(Boolean) : []
       }))
     };
   });
@@ -176,8 +197,29 @@ function normalizeState(raw) {
   return clean;
 }
 
-function persistState() {
+function normalizePhoto(photo) {
+  const id = String(photo?.id || '');
+  const url = String(photo?.url || '');
+  if (!id || !url.startsWith('/api/photos/')) return null;
+  return {
+    id,
+    url,
+    contentType: String(photo?.contentType || ''),
+    filename: String(photo?.filename || 'Collection photo'),
+    createdAt: String(photo?.createdAt || '')
+  };
+}
+
+function persistState(options = {}) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state));
+  if (options.cloud !== false) app.cloudSync?.queue();
+}
+
+function updateSyncStatus(status) {
+  if (!refs.syncStatus) return;
+  refs.syncStatus.dataset.state = status.state || 'connecting';
+  const label = refs.syncStatus.querySelector('span');
+  if (label) label.textContent = status.text || 'Connecting';
 }
 
 function populateFilters() {
@@ -260,7 +302,7 @@ function renderAll() {
 
 function updateOverallProgress() {
   const catalogOwned = Object.values(app.state.catalog || {}).filter((record) => record.copies?.length).length;
-  const catalogTotal = app.catalog?.meta.totalCards || app.catalog?.cards.length || 0;
+  const catalogTotal = app.catalog?.cards.filter(isCollectibleCard).length || 0;
   const catalogPercent = catalogTotal ? Math.round((catalogOwned / catalogTotal) * 100) : 0;
   const meter = document.querySelector('[data-overall-meter]');
   const meterLabel = document.querySelector('[data-overall-label]');
@@ -444,14 +486,14 @@ function getPlacementsByVillain() {
 function exportBackup() {
   const payload = {
     app: "Gibly's Skylanders Master Vault",
-    version: 5,
+    version: 6,
     exportedAt: new Date().toISOString(),
     dataset: {
       villains: app.villains.length,
       traps: app.traps.length,
       coreTraps: app.traps.filter((trap) => trap.collectionGroup === 'Core 60').length,
       variantTraps: app.traps.filter((trap) => trap.collectionGroup === 'Variant 6').length,
-      catalogCards: app.catalog?.meta.totalCards || 0,
+      catalogCards: app.catalog?.cards.filter(isCollectibleCard).length || 0,
       scanIdentities: app.catalog?.meta.totalScanIdentities || 0,
       ownedCatalogCards: Object.values(app.state.catalog || {}).filter((record) => record.copies?.length).length,
       ownedPhysicalPieces: Object.values(app.state.catalog || {}).reduce((total, record) => total + (record.copies?.length || 0), 0)
@@ -465,6 +507,10 @@ function exportBackup() {
   anchor.click();
   URL.revokeObjectURL(anchor.href);
   showToast('Backup exported');
+}
+
+function isCollectibleCard(card) {
+  return !['Prototype / Unreleased', 'Villain Reference'].includes(card?.category);
 }
 
 async function importBackup(event) {
@@ -483,15 +529,22 @@ async function importBackup(event) {
   }
 }
 
-function resetProgress() {
-  if (!confirm('Erase all saved progress on this device?')) return;
+async function resetProgress() {
+  if (!confirm('Erase all collection progress across your synced devices?')) return;
   app.state = freshState();
   app.selectedTrapId = '';
   app.lastPlacement = null;
   if (app.placementTimer) clearTimeout(app.placementTimer);
-  persistState();
+  persistState({ cloud: false });
   renderAll();
-  showToast('Progress reset');
+  try {
+    if (app.cloudSync) await app.cloudSync.reset();
+    else persistState();
+    showToast('Fresh vault synced to every device');
+  } catch {
+    persistState();
+    showToast('Vault cleared here; cloud retry is queued');
+  }
 }
 
 function setupBoardTilt() {

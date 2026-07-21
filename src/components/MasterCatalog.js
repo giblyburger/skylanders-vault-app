@@ -14,6 +14,8 @@ const PACKAGING_OPTIONS = ['Loose', 'Carded / sealed', 'Boxed', 'Package only'];
 
 export function createMasterCatalog(container, dialog, catalog, callbacks) {
   const cardsById = new Map(catalog.cards.map((card) => [card.id, card]));
+  const collectibleCards = catalog.cards.filter(isCollectibleCard);
+  const referenceCount = catalog.cards.length - collectibleCards.length + (catalog.scanCatalog || catalog.unmappedScanIdentities || []).filter((identity) => ['technical-only', 'in-game/digital'].includes(identity.releaseStatus)).length;
   const state = {
     search: '',
     game: '',
@@ -24,7 +26,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     layout: 'photos',
     limit: 72,
     activeCardId: '',
-    status: 'Ready for a Portal or NFC reader.'
+    status: 'Ready for a reader or compatible NFC tag.'
   };
 
   renderShell();
@@ -45,7 +47,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         storage: String(copy.storage || ''),
         acquired: String(copy.acquired || ''),
         paid: String(copy.paid || ''),
-        notes: String(copy.notes || '')
+        notes: String(copy.notes || ''),
+        photos: Array.isArray(copy.photos) ? copy.photos.map(normalizePhoto).filter(Boolean) : []
       }))
     };
   }
@@ -57,12 +60,12 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   }
 
   function renderShell() {
-    const games = unique(catalog.cards.map((card) => card.game).filter((game) => game && game !== 'Unknown'));
-    const categories = unique(catalog.cards.map((card) => card.category));
-    const elements = unique(catalog.cards.map((card) => card.element).filter((element) => element && element !== 'None'));
-    const photographed = catalog.cards.filter((card) => card.photoUrl).length;
+    const games = unique(collectibleCards.map((card) => card.game).filter((game) => game && game !== 'Unknown'));
+    const categories = unique(collectibleCards.map((card) => card.category));
+    const elements = unique(collectibleCards.map((card) => card.element).filter((element) => element && element !== 'None'));
+    const photographed = collectibleCards.filter((card) => card.photoUrl).length;
     const featureNames = ['Spyro', 'Trigger Happy', 'Stealth Elf', 'Tree Rex', 'Snap Shot'];
-    const featured = featureNames.map((name) => catalog.cards.find((card) => card.name === name && card.photoUrl)).filter(Boolean);
+    const featured = featureNames.map((name) => collectibleCards.find((card) => card.name === name && card.photoUrl)).filter(Boolean);
     container.innerHTML = `
       <header class="catalog-hero">
         <div class="catalog-hero__copy">
@@ -70,7 +73,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           <h2>Every hero. One powerful vault.</h2>
           <p>A pocket-ready home for every figure, Trap, vehicle, crystal, Portal, pack, and variant—built for fast scanning and effortless collecting.</p>
           <div class="catalog-hero__numbers" aria-label="Master catalog totals">
-            <span><strong>${catalog.meta.totalCards}</strong> pieces</span>
+            <span><strong>${collectibleCards.length}</strong> obtainable pieces</span>
             <span><strong>${photographed}</strong> exact photos</span>
             <span><strong>${catalog.meta.linkedScanIdentities}</strong> scan links</span>
           </div>
@@ -109,6 +112,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
             <p class="eyebrow">Portal intake</p>
             <h3 id="scan-station-title">Identify and load a physical piece</h3>
             <p>Use a Character ID and Variant ID, or a UID you have already saved.</p>
+            <p class="scan-station__safety">Direct NFC uses compatible NDEF tags only. Original Skylanders game data is never overwritten.</p>
           </div>
           <form class="scan-station__form" data-scan-form>
             <label>
@@ -117,12 +121,16 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
             </label>
             <button class="button button--primary" type="submit">Identify</button>
           </form>
+          <div class="nfc-actions">
+            <button class="button" type="button" data-nfc-scan>Scan NFC tag</button>
+            <span data-nfc-capability></span>
+          </div>
         </div>
       </details>
       <div class="catalog-grid" data-catalog-grid data-layout="photos"></div>
       <button class="button catalog-load-more" type="button" data-catalog-more hidden>Show more cards</button>
       <footer class="catalog-sources">
-        <p><strong>Accuracy policy:</strong> ${escapeHtml(catalog.meta.accuracyPolicy)} Market prices are dated snapshots, not permanent values. Community gameplay guides are labeled separately from manufacturer facts.</p>
+        <p><strong>Collectible catalog:</strong> unreleased, internal, debug, and digital-only records are kept out of the obtainable collection (${referenceCount} reference identities remain available to the scanner). Market prices are dated snapshots.</p>
         <details><summary>Data sources and credits</summary><ul>${catalog.meta.sources.map((source) => `<li><a href="${escapeHtml(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(source.name)}</a> — ${escapeHtml(source.use)}</li>`).join('')}</ul></details>
       </footer>`;
     container.querySelector('[data-catalog-sort]').value = state.sort;
@@ -172,6 +180,15 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       input.select();
     });
 
+    const nfcButton = container.querySelector('[data-nfc-scan]');
+    const nfcCapability = container.querySelector('[data-nfc-capability]');
+    const nfcSupported = 'NDEFReader' in window;
+    nfcButton.disabled = !nfcSupported;
+    nfcCapability.textContent = nfcSupported
+      ? 'Direct read and write available on this device'
+      : 'Use the manual reader field on this device';
+    nfcButton.addEventListener('click', scanNfc);
+
     container.querySelector('[data-catalog-grid]').addEventListener('click', (event) => {
       const action = event.target.closest('[data-card-action]');
       if (!action) return;
@@ -189,13 +206,13 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
   function render() {
     const collection = callbacks.getState().catalog || {};
-    const records = catalog.cards.map((card) => ({ card, record: getRecord(card.id) }));
+    const records = collectibleCards.map((card) => ({ card, record: getRecord(card.id) }));
     const ownedCards = records.filter(({ record }) => record.copies.length > 0).length;
     const ownedPieces = records.reduce((total, { record }) => total + record.copies.length, 0);
     const scannedPieces = records.reduce((total, { record }) => total + record.copies.filter((copy) => copy.uid).length, 0);
     const wishlist = records.filter(({ record }) => record.wishlist).length;
     container.querySelector('[data-catalog-progress]').innerHTML = `
-      <article><span>Cards owned</span><strong>${ownedCards}<small> / ${catalog.meta.totalCards}</small></strong></article>
+      <article><span>Cards owned</span><strong>${ownedCards}<small> / ${collectibleCards.length}</small></strong></article>
       <article><span>Physical pieces</span><strong>${ownedPieces}</strong></article>
       <article><span>Scanned copies</span><strong>${scannedPieces}</strong></article>
       <article><span>Wishlist</span><strong>${wishlist}</strong></article>`;
@@ -287,17 +304,18 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
   function quickAdd(cardId, seed = {}) {
     const card = cardsById.get(cardId);
-    if (!card) return;
+    if (!card || !isCollectibleCard(card)) return;
     const record = getRecord(cardId);
     record.copies.push({
-      id: makeCopyId(),
+      id: String(seed.copyId || makeCopyId()),
       uid: String(seed.uid || ''),
       condition: 'Not graded',
       packaging: 'Loose',
       storage: '',
       acquired: '',
       paid: '',
-      notes: ''
+      notes: '',
+      photos: []
     });
     saveRecord(cardId, record, `${card.name} added to your vault`);
     if (seed.openDetails) open(cardId);
@@ -317,7 +335,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     state.activeCardId = cardId;
     if (options.addCopy) {
       const record = getRecord(cardId);
-      record.copies.push({ id: makeCopyId(), uid: String(options.uid || ''), condition: 'Not graded', packaging: 'Loose', storage: '', acquired: '', paid: '', notes: '' });
+      record.copies.push({ id: makeCopyId(), uid: String(options.uid || ''), condition: 'Not graded', packaging: 'Loose', storage: '', acquired: '', paid: '', notes: '', photos: [] });
       saveRecord(cardId, record);
     }
     renderDialog(card);
@@ -398,7 +416,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       <section id="catalog-copies" class="catalog-detail__section catalog-inventory">
         <div class="catalog-inventory__head"><div><h3>My physical copies</h3><p>${copies.length ? `${copies.length} saved cop${copies.length === 1 ? 'y' : 'ies'}` : 'Nothing owned yet'}</p></div><button class="button button--primary" type="button" data-add-copy>+ Add a copy</button></div>
         <label class="catalog-wishlist"><input type="checkbox" data-record-wishlist ${record.wishlist ? 'checked' : ''}> Keep this card on my wishlist</label>
-        <div data-copy-list>${copies.map(copyMarkup).join('') || '<p class="catalog-empty-copy">Add a copy now, or let the future scanner create one automatically when this piece is identified.</p>'}</div>
+        <div data-copy-list>${copies.map((copy, index) => copyMarkup(copy, index)).join('') || '<p class="catalog-empty-copy">Add a copy now, scan it, and attach photos from your phone.</p>'}</div>
         <label class="field">Card notes<textarea data-record-notes rows="3" placeholder="Anything that applies to every copy of this release…">${escapeHtml(record.notes)}</textarea></label>
       </section>
 
@@ -419,17 +437,70 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
     dialog.querySelector('[data-add-copy]').addEventListener('click', () => {
       const updated = readRecordFromDialog(record);
-      updated.copies.push({ id: makeCopyId(), uid: '', condition: 'Not graded', packaging: 'Loose', storage: '', acquired: '', paid: '', notes: '' });
+      updated.copies.push({ id: makeCopyId(), uid: '', condition: 'Not graded', packaging: 'Loose', storage: '', acquired: '', paid: '', notes: '', photos: [] });
       saveRecord(card.id, updated);
       renderDialog(card);
       dialog.querySelector('[data-copy-list] article:last-child input')?.focus();
     });
     dialog.querySelectorAll('[data-remove-copy]').forEach((button) => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
         const updated = readRecordFromDialog(record);
+        const removed = updated.copies.find((copy) => copy.id === button.dataset.removeCopy);
+        if (removed?.photos?.length && !confirm('Remove this copy and all of its uploaded photos?')) return;
+        await Promise.allSettled((removed?.photos || []).map((photo) => callbacks.onDeletePhoto?.(photo.id)));
         updated.copies = updated.copies.filter((copy) => copy.id !== button.dataset.removeCopy);
         saveRecord(card.id, updated);
         renderDialog(card);
+      });
+    });
+
+    dialog.querySelectorAll('[data-copy-photo-input]').forEach((input) => {
+      input.addEventListener('change', async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const copyId = input.dataset.copyPhotoInput;
+        const label = dialog.querySelector(`[data-copy-photo-label="${cssEscape(copyId)}"]`);
+        try {
+          if (!callbacks.onUploadPhoto) throw new Error('Cloud photo sync is still connecting.');
+          if (label) label.dataset.loading = 'true';
+          callbacks.onToast('Uploading photo…');
+          const photo = await callbacks.onUploadPhoto(card.id, copyId, file);
+          const updated = readRecordFromDialog(record);
+          const copy = updated.copies.find((item) => item.id === copyId);
+          if (copy && photo) copy.photos.push(normalizePhoto(photo));
+          saveRecord(card.id, updated, 'Photo added and syncing');
+          renderDialog(card);
+        } catch (error) {
+          callbacks.onToast(error?.message || 'Photo upload failed');
+          if (label) label.dataset.loading = 'false';
+        } finally {
+          input.value = '';
+        }
+      });
+    });
+
+    dialog.querySelectorAll('[data-delete-photo]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        if (!confirm('Delete this personal collection photo from every synced device?')) return;
+        try {
+          await callbacks.onDeletePhoto?.(button.dataset.deletePhoto);
+          const updated = readRecordFromDialog(record);
+          const copy = updated.copies.find((item) => item.id === button.dataset.copyId);
+          if (copy) copy.photos = copy.photos.filter((photo) => photo.id !== button.dataset.deletePhoto);
+          saveRecord(card.id, updated, 'Photo deleted');
+          renderDialog(card);
+        } catch (error) {
+          callbacks.onToast(error?.message || 'Could not delete that photo');
+        }
+      });
+    });
+
+    dialog.querySelectorAll('[data-nfc-write-copy]').forEach((button) => {
+      button.disabled = !('NDEFReader' in window);
+      button.addEventListener('click', () => {
+        const updated = readRecordFromDialog(record);
+        const copy = updated.copies.find((item) => item.id === button.dataset.nfcWriteCopy);
+        if (copy) writeNfc(card, copy);
       });
     });
     const viewer = dialog.querySelector('[data-photo-viewer]');
@@ -454,16 +525,21 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   }
 
   function readRecordFromDialog(fallback) {
-    const copies = Array.from(dialog.querySelectorAll('[data-copy]')).map((article) => ({
-      id: article.dataset.copy,
-      uid: article.querySelector('[data-copy-uid]').value.trim(),
-      condition: article.querySelector('[data-copy-condition]').value,
-      packaging: article.querySelector('[data-copy-packaging]').value,
-      storage: article.querySelector('[data-copy-storage]').value.trim(),
-      acquired: article.querySelector('[data-copy-acquired]').value,
-      paid: article.querySelector('[data-copy-paid]').value.trim(),
-      notes: article.querySelector('[data-copy-notes]').value.trim()
-    }));
+    const priorCopies = new Map((fallback.copies || []).map((copy) => [copy.id, copy]));
+    const copies = Array.from(dialog.querySelectorAll('[data-copy]')).map((article) => {
+      const prior = priorCopies.get(article.dataset.copy);
+      return {
+        id: article.dataset.copy,
+        uid: article.querySelector('[data-copy-uid]').value.trim(),
+        condition: article.querySelector('[data-copy-condition]').value,
+        packaging: article.querySelector('[data-copy-packaging]').value,
+        storage: article.querySelector('[data-copy-storage]').value.trim(),
+        acquired: article.querySelector('[data-copy-acquired]').value,
+        paid: article.querySelector('[data-copy-paid]').value.trim(),
+        notes: article.querySelector('[data-copy-notes]').value.trim(),
+        photos: Array.isArray(prior?.photos) ? prior.photos.map(normalizePhoto).filter(Boolean) : []
+      };
+    });
     return {
       wishlist: dialog.querySelector('[data-record-wishlist]')?.checked ?? fallback.wishlist,
       notes: dialog.querySelector('[data-record-notes]')?.value.trim() ?? fallback.notes,
@@ -498,13 +574,14 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const key = `${toHex(parsed.charId)}:${toHex(parsed.variantId)}`;
     const cardId = catalog.scanIndex[key];
     const card = cardId ? cardsById.get(cardId) : null;
-    if (!card) {
+    if (!card || !isCollectibleCard(card)) {
       const technical = (catalog.scanCatalog || catalog.unmappedScanIdentities || []).find((identity) => `${identity.charId}:${identity.variantId}` === key);
       const labels = { 'technical-only': 'internal/debug or unreleased game-data record', 'in-game/digital': 'digital or in-game identity', documented: 'documented ID without a confirmed retail-card link' };
-      state.status = technical ? `${technical.name} recognized as a ${labels[technical.releaseStatus] || technical.releaseStatus || 'technical record'}. ${technical.statusNote || ''}` : `No documented identity for ${key}.`;
+      const reference = technical || card?.scanIdentities?.find((identity) => `${identity.charId}:${identity.variantId}` === key);
+      state.status = reference ? `${reference.name || card?.name} recognized as a ${labels[reference.releaseStatus] || 'reference-only record'}. It is not mixed into the obtainable collection.` : `No documented identity for ${key}.`;
       callbacks.onToast(state.status);
       render();
-      return technical || null;
+      return reference || null;
     }
     state.status = `${card.name} identified${parsed.uid ? ` · UID ${parsed.uid}` : ''}.`;
     render();
@@ -516,12 +593,114 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     return card;
   }
 
+  async function scanNfc() {
+    if (!('NDEFReader' in window)) {
+      state.status = 'Direct web NFC is unavailable here. Use the reader result field instead.';
+      callbacks.onToast(state.status);
+      render();
+      return;
+    }
+    const controller = new AbortController();
+    const reader = new NDEFReader();
+    let finished = false;
+    const stop = () => {
+      if (finished) return;
+      finished = true;
+      controller.abort();
+    };
+    try {
+      state.status = 'Hold a compatible NFC tag near your phone…';
+      render();
+      await reader.scan({ signal: controller.signal });
+      const timer = setTimeout(() => {
+        stop();
+        state.status = 'NFC scan timed out. Try again or use the reader field.';
+        render();
+      }, 20000);
+      reader.addEventListener('readingerror', () => {
+        clearTimeout(timer);
+        stop();
+        state.status = 'That NFC tag could not be read as NDEF.';
+        callbacks.onToast(state.status);
+        render();
+      }, { once: true });
+      reader.addEventListener('reading', (event) => {
+        clearTimeout(timer);
+        stop();
+        const payload = readNfcPayload(event.message);
+        if (payload?.app === 'gibly-skylanders-vault' && payload.cardId) {
+          const card = cardsById.get(payload.cardId);
+          if (!card || !isCollectibleCard(card)) {
+            state.status = 'This tag points to a reference-only record.';
+          } else {
+            const record = getRecord(card.id);
+            const exists = record.copies.some((copy) => copy.id === payload.copyId);
+            if (exists) open(card.id);
+            else quickAdd(card.id, { copyId: payload.copyId, uid: event.serialNumber || payload.uid || '', openDetails: true });
+            state.status = `${card.name} loaded from NFC.`;
+          }
+        } else if (payload) {
+          identifyScan(payload);
+        } else if (event.serialNumber) {
+          identifyScan({ uid: event.serialNumber });
+        } else {
+          state.status = 'NFC tag read, but it does not contain a Vault record.';
+        }
+        callbacks.onToast(state.status);
+        render();
+      }, { once: true });
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      state.status = error?.name === 'NotAllowedError'
+        ? 'NFC permission was not granted.'
+        : 'Direct NFC could not start on this device.';
+      callbacks.onToast(state.status);
+      render();
+    }
+  }
+
+  async function writeNfc(card, copy) {
+    if (!('NDEFReader' in window)) {
+      callbacks.onToast('Direct NFC writing is unavailable on this device.');
+      return false;
+    }
+    const approved = confirm('Write or rewrite this Vault link onto a compatible writable NDEF tag? This replaces the tag’s existing NDEF message. Use only a blank or personal tag—never an original Skylanders figure.');
+    if (!approved) return false;
+    const payload = {
+      app: 'gibly-skylanders-vault',
+      version: 1,
+      cardId: card.id,
+      cardName: card.name,
+      copyId: copy.id,
+      uid: copy.uid || ''
+    };
+    try {
+      state.status = 'Hold your compatible writable NFC tag near the phone…';
+      render();
+      const writer = new NDEFReader();
+      await writer.write({ records: [{
+        recordType: 'mime',
+        mediaType: 'application/vnd.gibly.skylanders+json',
+        data: JSON.stringify(payload)
+      }] }, { overwrite: true });
+      state.status = `${card.name} Vault link written to NFC.`;
+      callbacks.onToast('NFC tag written successfully');
+      render();
+      return true;
+    } catch (error) {
+      state.status = error?.name === 'NotAllowedError' ? 'NFC write permission was not granted.' : 'That tag could not be written.';
+      callbacks.onToast(state.status);
+      render();
+      return false;
+    }
+  }
+
   function closeDialog() {
     if (dialog.open) dialog.close();
     state.activeCardId = '';
   }
 
-  return { render, open, identifyScan, meta: catalog.meta };
+  return { render, open, identifyScan, scanNfc, writeNfc, meta: catalog.meta };
 }
 
 function selectMarkup(label, key, options) {
@@ -556,8 +735,9 @@ function verificationLabel(status) {
 }
 
 function copyMarkup(copy, index) {
+  const photos = Array.isArray(copy.photos) ? copy.photos.filter(Boolean) : [];
   return `<article class="catalog-copy" data-copy="${escapeHtml(copy.id)}">
-    <header><strong>Copy ${index + 1}</strong><button class="button button--danger" type="button" data-remove-copy="${escapeHtml(copy.id)}">Remove</button></header>
+    <header><strong>Copy ${index + 1}</strong><div class="catalog-copy__header-actions"><button class="button" type="button" data-nfc-write-copy="${escapeHtml(copy.id)}">Write / rewrite NFC</button><button class="button button--danger" type="button" data-remove-copy="${escapeHtml(copy.id)}">Remove</button></div></header>
     <div class="catalog-copy__grid">
       <label><span>Scan UID</span><input data-copy-uid value="${escapeHtml(copy.uid)}" placeholder="Filled by reader or paste manually"></label>
       <label><span>Condition</span><select data-copy-condition>${optionsMarkup(CONDITION_OPTIONS, copy.condition)}</select></label>
@@ -567,6 +747,10 @@ function copyMarkup(copy, index) {
       <label><span>Price paid</span><input data-copy-paid inputmode="decimal" value="${escapeHtml(copy.paid)}" placeholder="$0.00"></label>
     </div>
     <label><span>Copy notes</span><textarea data-copy-notes rows="2" placeholder="Paint, damage, tag behavior, seller…">${escapeHtml(copy.notes)}</textarea></label>
+    <section class="copy-photos" aria-label="Personal photos for copy ${index + 1}">
+      <div class="copy-photos__head"><div><strong>My photos</strong><span>${photos.length ? `${photos.length} synced` : 'Photograph this exact piece'}</span></div><label class="button copy-photo-upload" data-copy-photo-label="${escapeHtml(copy.id)}"><input data-copy-photo-input="${escapeHtml(copy.id)}" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment" hidden><span>Add photo</span></label></div>
+      ${photos.length ? `<div class="copy-photo-grid">${photos.map((photo) => `<figure><button type="button" data-photo-viewer-src="${escapeHtml(photo.url)}" data-photo-viewer-alt="Personal photo of copy ${index + 1}" data-photo-viewer-label="${escapeHtml(photo.filename || `Copy ${index + 1} photo`)}"><img loading="lazy" src="${escapeHtml(photo.url)}" alt="Personal collection photo"></button><button class="copy-photo-delete" type="button" data-delete-photo="${escapeHtml(photo.id)}" data-copy-id="${escapeHtml(copy.id)}" aria-label="Delete this photo">Ã—</button></figure>`).join('')}</div>` : '<p class="copy-photos__empty">On your phone, tap Add photo to open the camera. It will appear on your other signed-in devices after syncing.</p>'}
+    </section>
   </article>`;
 }
 
@@ -592,6 +776,40 @@ function parseScan(input) {
   if (pair) return { charId: pair[1], variantId: pair[2], uid: pair[3] || '' };
   if (/^(?:[0-9a-f]{2}[:-]?){4,10}$/i.test(value)) return { charId: '', variantId: '', uid: value };
   return null;
+}
+
+function readNfcPayload(message) {
+  for (const record of message?.records || []) {
+    if (!record.data) continue;
+    try {
+      const text = new TextDecoder(record.encoding || 'utf-8').decode(record.data);
+      if (!text) continue;
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {}
+  }
+  return null;
+}
+
+function normalizePhoto(photo) {
+  const id = String(photo?.id || '');
+  const url = String(photo?.url || '');
+  if (!id || !url.startsWith('/api/photos/')) return null;
+  return {
+    id,
+    url,
+    contentType: String(photo?.contentType || ''),
+    filename: String(photo?.filename || 'Collection photo'),
+    createdAt: String(photo?.createdAt || '')
+  };
+}
+
+function isCollectibleCard(card) {
+  return !['Prototype / Unreleased', 'Villain Reference'].includes(card?.category);
+}
+
+function cssEscape(value) {
+  return window.CSS?.escape ? window.CSS.escape(String(value)) : String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
 }
 
 function toHex(value) {

@@ -1,17 +1,18 @@
-const CACHE_NAME = 'gibly-ios-dark-v2';
+const CACHE_NAME = 'gibly-cloud-nfc-v1';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './src/app.js?v=ios-dark-v2',
+  './src/app.js?v=cloud-nfc-v1',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=ios-dark-v2',
-  './src/styles/gallery.css?v=ios-dark-v2',
+  './src/components/MasterCatalog.js?v=cloud-nfc-v1',
+  './src/components/CloudSync.js?v=cloud-nfc-v1',
+  './src/styles/gallery.css?v=cloud-nfc-v1',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
@@ -36,6 +37,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
+
+  if (requestUrl.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
