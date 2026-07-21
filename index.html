@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b4f79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gibly's Vault">
+    <meta name="description" content="A scan-ready Skylanders Master Vault with 763 source-backed cards, exact photos, game compatibility, technical IDs, guides, and collection tracking.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Gibly's Skylanders Master Vault">
+    <meta property="og:description" content="763 source-backed cards covering figures, variants, Traps, vehicles, crystals, items, packs, Portals, and documented scan records.">
+    <meta property="og:image" content="public/social-preview.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gibly's Skylanders Master Vault">
+    <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with exact photos and source-linked facts.">
+    <meta name="twitter:image" content="public/social-preview.jpg">
+    <title>Gibly's Skylanders Master Vault</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="public/app-icon.svg">
+    <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="src/styles/main.css?v=master-v2">
+    <script type="module" src="src/app.js?v=master-v2"></script>
+  </head>
+  <body>
+    <div class="app-shell" data-app-root>
+      <header class="app-header">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">GV</span>
+          <div>
+            <p class="eyebrow">Complete Skylanders Collection</p>
+            <h1>Gibly's Master Vault</h1>
+          </div>
+        </div>
+
+        <div class="overall-progress" aria-label="Overall progress">
+          <span data-overall-label>0% complete</span>
+          <i data-overall-meter style="--value:0%"></i>
+        </div>
+
+        <div class="header-actions" aria-label="Backup and app actions">
+          <button class="button button--primary" type="button" data-export>Export</button>
+          <button class="button" type="button" data-import>Import</button>
+          <button class="button button--danger" type="button" data-reset>Reset</button>
+          <button class="button" type="button" data-install hidden>Install</button>
+          <input data-import-file type="file" accept="application/json" hidden>
+        </div>
+      </header>
+
+      <section class="summary-grid" data-summary aria-label="Collection progress"></section>
+
+      <section class="controls" aria-label="Collection filters">
+        <label class="search-field">
+          <span class="sr-only">Search villains and Traps</span>
+          <input data-search type="search" autocomplete="off" placeholder="Search villains, Traps, molds">
+        </label>
+        <label>
+          <span>Element</span>
+          <select data-filter-element></select>
+        </label>
+        <label>
+          <span>Villain</span>
+          <select data-filter-villain></select>
+        </label>
+        <label>
+          <span>Mold</span>
+          <select data-filter-mold></select>
+        </label>
+        <label>
+          <span>Group</span>
+          <select data-filter-group></select>
+        </label>
+      </section>
+
+      <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
+
+      <nav class="view-tabs" role="tablist" aria-label="Collection views">
+        <button class="view-tab is-active" type="button" role="tab" aria-selected="true" data-view-tab="board">Villain Board</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="rack">Trap Rack</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="catalog">Master Catalog</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="reference">Board Photo</button>
+      </nav>
+
+      <main>
+        <section class="view" data-view="board">
+          <div class="board-stage" data-board-stage>
+            <div class="vault-board" data-board-shell>
+              <div class="board-plaque">
+                <span>Cloudcracker Villain Vault</span>
+                <strong>46 slots</strong>
+              </div>
+              <div class="villain-board" data-villain-board></div>
+              <div class="status-legend" aria-label="Villain status legend">
+                <span><i class="legend-dot legend-dot--not-found"></i>Not Found</span>
+                <span><i class="legend-dot legend-dot--defeated"></i>Defeated</span>
+                <span><i class="legend-dot legend-dot--trapped"></i>Trapped</span>
+                <span><i class="legend-dot legend-dot--evolved"></i>Evolved</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="rack" hidden>
+          <div class="rack-shell">
+            <header class="section-header">
+              <h2>Traptanium Trap Rack</h2>
+              <p>60 core releases + 6 factory-loaded villain variants</p>
+            </header>
+            <div class="trap-rack" data-trap-rack></div>
+          </div>
+        </section>
+
+        <section class="view" data-view="catalog" hidden>
+          <div class="catalog-shell" data-master-catalog></div>
+        </section>
+
+        <section class="view" data-view="reference" hidden>
+          <figure class="reference-view">
+            <img src="public/board-reference.jpg" alt="Gibly's physical Skylanders Trap Team storage board with Trap pieces placed above villain slots">
+            <figcaption>Physical board reference</figcaption>
+          </figure>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="dialog-shell" data-trap-dialog></dialog>
+    <dialog class="dialog-shell catalog-dialog" data-catalog-dialog></dialog>
+    <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

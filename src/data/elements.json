@@ -1,0 +1,57 @@
+{
+  "Air": {
+    "color": "#b9e7f5",
+    "dark": "#5595b2",
+    "icon": "☁"
+  },
+  "Dark": {
+    "color": "#604485",
+    "dark": "#24152f",
+    "icon": "☾"
+  },
+  "Earth": {
+    "color": "#a66a32",
+    "dark": "#4d2b12",
+    "icon": "◆"
+  },
+  "Fire": {
+    "color": "#f04e3e",
+    "dark": "#7d1c17",
+    "icon": "🔥"
+  },
+  "Life": {
+    "color": "#55b94d",
+    "dark": "#1c5e2a",
+    "icon": "🌿"
+  },
+  "Light": {
+    "color": "#f2da69",
+    "dark": "#8c7417",
+    "icon": "☀"
+  },
+  "Magic": {
+    "color": "#a05ad0",
+    "dark": "#4a226c",
+    "icon": "✦"
+  },
+  "Tech": {
+    "color": "#f1a329",
+    "dark": "#86520a",
+    "icon": "⚙"
+  },
+  "Undead": {
+    "color": "#596474",
+    "dark": "#222a35",
+    "icon": "☠"
+  },
+  "Water": {
+    "color": "#2c82d2",
+    "dark": "#0f4278",
+    "icon": "💧"
+  },
+  "Kaos": {
+    "color": "#1c202a",
+    "dark": "#000000",
+    "icon": "K"
+  }
+}

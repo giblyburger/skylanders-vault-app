@@ -1,0 +1,7 @@
+write-test.txt
+node_modules/
+dist/
+.pnpm-store/
+.wrangler/
+.dev.vars*
+.env*

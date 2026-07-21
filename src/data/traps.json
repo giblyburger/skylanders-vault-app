@@ -1,0 +1,596 @@
+[
+  {
+    "id": "trap-air-hourglass",
+    "element": "Air",
+    "mold": "Hourglass",
+    "official": "Tempest Timer",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-air-jughead",
+    "element": "Air",
+    "mold": "Jughead",
+    "official": "Drafty Decanter",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-air-screamer",
+    "element": "Air",
+    "mold": "Screamer",
+    "official": "Storm Warning",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-air-snake",
+    "element": "Air",
+    "mold": "Snake",
+    "official": "Cloudy Cobra",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-air-sword",
+    "element": "Air",
+    "mold": "Sword",
+    "official": "Cyclone Sabre",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-air-toucan",
+    "element": "Air",
+    "mold": "Toucan",
+    "official": "Breezy Bird",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-dark-handstand",
+    "element": "Dark",
+    "mold": "Handstand",
+    "official": "Ghastly Grimace",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-dark-spider",
+    "element": "Dark",
+    "mold": "Spider",
+    "official": "Shadow Spider",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-dark-sword",
+    "element": "Dark",
+    "mold": "Sword",
+    "official": "Dark Dagger",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-earth-hammer",
+    "element": "Earth",
+    "mold": "Hammer",
+    "official": "Slag Hammer",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-earth-handstand",
+    "element": "Earth",
+    "mold": "Handstand",
+    "official": "Rubble Trouble",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-earth-hourglass",
+    "element": "Earth",
+    "mold": "Hourglass",
+    "official": "Dust of Time",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-earth-orb",
+    "element": "Earth",
+    "mold": "Orb",
+    "official": "Banded Boulder",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-earth-totem",
+    "element": "Earth",
+    "mold": "Totem",
+    "official": "Spinning Sandstorm",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-earth-toucan",
+    "element": "Earth",
+    "mold": "Toucan",
+    "official": "Rock Hawk",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-fire-captain-s-hat",
+    "element": "Fire",
+    "mold": "Captain's Hat",
+    "official": "Spark Spear",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-fire-scepter",
+    "element": "Fire",
+    "mold": "Scepter",
+    "official": "Fire Flower",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-fire-screamer",
+    "element": "Fire",
+    "mold": "Screamer",
+    "official": "Scorching Stopper",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-fire-torch",
+    "element": "Fire",
+    "mold": "Torch",
+    "official": "Eternal Flame",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-fire-totem",
+    "element": "Fire",
+    "mold": "Totem",
+    "official": "Searing Spinner",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-fire-yawn",
+    "element": "Fire",
+    "mold": "Yawn",
+    "official": "Blazing Belch",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-kaos-kaos-trap",
+    "element": "Kaos",
+    "mold": "Kaos Trap",
+    "official": "Kaos Trap",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-life-hammer",
+    "element": "Life",
+    "mold": "Hammer",
+    "official": "Weed Whacker",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-life-snake",
+    "element": "Life",
+    "mold": "Snake",
+    "official": "Seed Serpent",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-life-sword",
+    "element": "Life",
+    "mold": "Sword",
+    "official": "Jade Blade",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-life-torch",
+    "element": "Life",
+    "mold": "Torch",
+    "official": "Emerald Energy",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-life-toucan",
+    "element": "Life",
+    "mold": "Toucan",
+    "official": "Oak Eagle",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-life-yawn",
+    "element": "Life",
+    "mold": "Yawn",
+    "official": "Shrub Shrieker",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-light-owl",
+    "element": "Light",
+    "mold": "Owl",
+    "official": "Heavenly Hawk",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-light-rocket",
+    "element": "Light",
+    "mold": "Rocket",
+    "official": "Shining Ship",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-light-yawn",
+    "element": "Light",
+    "mold": "Yawn",
+    "official": "Beam Scream",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-magic-axe",
+    "element": "Magic",
+    "mold": "Axe",
+    "official": "Axe of Illusion",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-magic-hourglass",
+    "element": "Magic",
+    "mold": "Hourglass",
+    "official": "Arcane Hourglass",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-magic-log-holder",
+    "element": "Magic",
+    "mold": "Log Holder",
+    "official": "Biter's Bane",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-magic-rocket",
+    "element": "Magic",
+    "mold": "Rocket",
+    "official": "Rune Rocket",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-magic-skull",
+    "element": "Magic",
+    "mold": "Skull",
+    "official": "Sorcerous Skull",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-magic-totem",
+    "element": "Magic",
+    "mold": "Totem",
+    "official": "Spell Slapper",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-tech-angel",
+    "element": "Tech",
+    "mold": "Angel",
+    "official": "Automatic Angel",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-tech-flying-helmet",
+    "element": "Tech",
+    "mold": "Flying Helmet",
+    "official": "Makers Mana",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-tech-hand",
+    "element": "Tech",
+    "mold": "Hand",
+    "official": "Grabbing Gadget",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-tech-handstand",
+    "element": "Tech",
+    "mold": "Handstand",
+    "official": "Topsy Techy",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-tech-scepter",
+    "element": "Tech",
+    "mold": "Scepter",
+    "official": "Factory Flower",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-tech-tiki",
+    "element": "Tech",
+    "mold": "Tiki",
+    "official": "Tech Totem",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-undead-axe",
+    "element": "Undead",
+    "mold": "Axe",
+    "official": "Haunted Hatchet",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-undead-captain-s-hat",
+    "element": "Undead",
+    "mold": "Captain's Hat",
+    "official": "Dream Piercer",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-undead-hand",
+    "element": "Undead",
+    "mold": "Hand",
+    "official": "Grim Gripper",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-undead-orb",
+    "element": "Undead",
+    "mold": "Orb",
+    "official": "Spirit Sphere",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-undead-skull",
+    "element": "Undead",
+    "mold": "Skull",
+    "official": "Spectral Skull",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-undead-snake",
+    "element": "Undead",
+    "mold": "Snake",
+    "official": "Spooky Snake",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-water-angel",
+    "element": "Water",
+    "mold": "Angel",
+    "official": "Soaking Staff",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-water-axe",
+    "element": "Water",
+    "mold": "Axe",
+    "official": "Aqua Axe",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-water-flying-helmet",
+    "element": "Water",
+    "mold": "Flying Helmet",
+    "official": "Frost Helm",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-water-jughead",
+    "element": "Water",
+    "mold": "Jughead",
+    "official": "Flood Flask",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-water-log-holder",
+    "element": "Water",
+    "mold": "Log Holder",
+    "official": "Wet Walter",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-water-tiki",
+    "element": "Water",
+    "mold": "Tiki",
+    "official": "Tidal Tiki",
+    "edition": "Standard",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-special-easter-bunny-earth-trap",
+    "element": "Earth",
+    "mold": "Handstand",
+    "official": "Easter Bunny Earth Trap",
+    "edition": "Easter Variant",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-special-legendary-undead-orb",
+    "element": "Undead",
+    "mold": "Orb",
+    "official": "Legendary Undead Orb",
+    "edition": "Legendary",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-special-legendary-undead-skull",
+    "element": "Undead",
+    "mold": "Skull",
+    "official": "Legendary Undead Skull",
+    "edition": "Legendary",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-special-legendary-water-jughead",
+    "element": "Water",
+    "mold": "Jughead",
+    "official": "Legendary Water Jughead",
+    "edition": "Legendary",
+    "preloaded": null,
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-special-ultimate-kaos-trap",
+    "element": "Kaos",
+    "mold": "Kaos Trap",
+    "official": "Ultimate Kaos Trap",
+    "edition": "Dark Edition",
+    "preloaded": "Kaos",
+    "collectionGroup": "Core 60"
+  },
+  {
+    "id": "trap-variant-outlaw-brawl--chain-trap",
+    "element": "Water",
+    "mold": "Log Holder",
+    "official": "Outlaw Brawl & Chain Trap",
+    "edition": "Preloaded Villain Variant",
+    "preloaded": "Outlaw Brawl & Chain",
+    "collectionGroup": "Variant 6"
+  },
+  {
+    "id": "trap-variant-rebel-lob-goblin-trap",
+    "element": "Light",
+    "mold": "Rocket",
+    "official": "Rebel Lob Goblin Trap",
+    "edition": "Preloaded Villain Variant",
+    "preloaded": "Rebel Lob Goblin",
+    "collectionGroup": "Variant 6"
+  },
+  {
+    "id": "trap-variant-red-hot-tussle-sprout-trap",
+    "element": "Earth",
+    "mold": "Totem",
+    "official": "Red Hot Tussle Sprout Trap",
+    "edition": "Preloaded Villain Variant",
+    "preloaded": "Red Hot Tussle Sprout",
+    "collectionGroup": "Variant 6"
+  },
+  {
+    "id": "trap-variant-riot-shield-shredder-trap",
+    "element": "Life",
+    "mold": "Torch",
+    "official": "Riot Shield Shredder Trap",
+    "edition": "Preloaded Villain Variant",
+    "preloaded": "Riot Shield Shredder",
+    "collectionGroup": "Variant 6"
+  },
+  {
+    "id": "trap-variant-steamed-broccoli-guy-trap",
+    "element": "Life",
+    "mold": "Angel",
+    "official": "Steamed Broccoli Guy Trap",
+    "edition": "Preloaded Villain Variant",
+    "preloaded": "Steamed Broccoli Guy",
+    "collectionGroup": "Variant 6"
+  },
+  {
+    "id": "trap-variant-steampunk-shrednaught-trap",
+    "element": "Tech",
+    "mold": "Flying Helmet",
+    "official": "Steampunk Shrednaught Trap",
+    "edition": "Preloaded Villain Variant",
+    "preloaded": "Steampunk Shrednaught",
+    "collectionGroup": "Variant 6"
+  }
+]
