@@ -20,8 +20,8 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="public/app-icon.svg">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="src/styles/gallery.css?v=complete-directory-v1">
-    <script type="module" src="src/app.js?v=complete-directory-v1"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=monochrome-directory-v2">
+    <script type="module" src="src/app.js?v=monochrome-directory-v2"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -119,7 +119,12 @@
         </section>
 
         <section class="view" data-view="catalog">
-          <div class="catalog-shell" data-master-catalog></div>
+          <div class="catalog-shell" data-master-catalog>
+            <section class="vault-loading" aria-live="polite">
+              <span></span>
+              <div><strong>Loading the complete collection</strong><small>Six games · 640 individual cards</small></div>
+            </section>
+          </div>
         </section>
 
         <section class="view" data-view="reference" hidden>

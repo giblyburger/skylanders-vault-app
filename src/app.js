@@ -2,7 +2,7 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=complete-directory-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=monochrome-directory-v2';
 import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
@@ -603,7 +603,9 @@ function setupInstallPrompt() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=monochrome-directory-v2', { updateViaCache: 'none' })
+    .then((registration) => registration.update())
+    .catch(() => {});
 }
 
 function showToast(message) {

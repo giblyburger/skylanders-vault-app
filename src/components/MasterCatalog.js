@@ -10,12 +10,12 @@ const GAME_SHORT = {
 };
 
 const GAME_LINES = [
-  { name: "Spyro's Adventure", year: 2011, number: '01', feature: 'Spyro', accent: '#8f6fff' },
-  { name: 'Giants', year: 2012, number: '02', feature: 'Tree Rex', accent: '#ff745f' },
-  { name: 'SWAP Force', year: 2013, number: '03', feature: 'Wash Buckler', accent: '#57c8ff' },
-  { name: 'Trap Team', year: 2014, number: '04', feature: 'Snap Shot', accent: '#6ee69e' },
-  { name: 'SuperChargers', year: 2015, number: '05', feature: 'Spitfire', accent: '#ffb64d' },
-  { name: 'Imaginators', year: 2016, number: '06', feature: 'King Pen', accent: '#f0d36e' }
+  { name: "Spyro's Adventure", year: 2011, number: '01', feature: 'Spyro', accent: '#f4f4f5' },
+  { name: 'Giants', year: 2012, number: '02', feature: 'Tree Rex', accent: '#d7d7da' },
+  { name: 'SWAP Force', year: 2013, number: '03', feature: 'Wash Buckler', accent: '#bcbcc1' },
+  { name: 'Trap Team', year: 2014, number: '04', feature: 'Snap Shot', accent: '#eeeeef' },
+  { name: 'SuperChargers', year: 2015, number: '05', feature: 'Spitfire', accent: '#c9c9cd' },
+  { name: 'Imaginators', year: 2016, number: '06', feature: 'King Pen', accent: '#fafafa' }
 ];
 
 const CONDITION_OPTIONS = ['Not graded', 'New / sealed', 'Like new', 'Good', 'Played', 'Damaged', 'Parts / repair'];
@@ -104,7 +104,12 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           </div>
         </div>
         <div class="catalog-hero__gallery" aria-label="Featured collection pieces">
-          ${featured.map((card, index) => `<figure style="--hero-index:${index}"><img src="${escapeHtml(cardArtworkUrl(card))}" alt="${escapeHtml(card.name)} collector card"><figcaption>${escapeHtml(card.name)}</figcaption></figure>`).join('')}
+          ${featured.map((card, index) => `<figure style="--hero-index:${index};--card-el:${elementColor(card.element)}">
+            <span class="hero-trading-card__header"><span><small>${escapeHtml(card.game)}</small><strong>${escapeHtml(card.name)}</strong></span><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
+            <span class="hero-trading-card__art"><img src="${escapeHtml(cardArtworkUrl(card))}" alt="${escapeHtml(card.name)} collector card"></span>
+            <figcaption><span>${escapeHtml(card.element !== 'None' ? card.element : card.category)} · ${escapeHtml(card.category)}</span><strong>${escapeHtml(card.releaseYear || '')}</strong></figcaption>
+            <span class="hero-trading-card__foil" aria-hidden="true"></span>
+          </figure>`).join('')}
         </div>
       </header>
 
@@ -193,7 +198,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     directory.addEventListener('click', (event) => {
       const gameButton = event.target.closest('[data-directory-game]');
       const categoryButton = event.target.closest('[data-directory-category]');
-      if (!gameButton && !categoryButton) return;
+      const elementButton = event.target.closest('[data-directory-element]');
+      if (!gameButton && !categoryButton && !elementButton) return;
       if (gameButton) {
         const game = gameButton.dataset.directoryGame;
         state.game = state.game === game ? '' : game;
@@ -203,6 +209,11 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         const category = categoryButton.dataset.directoryCategory;
         state.category = state.category === category ? '' : category;
         container.querySelector('[data-catalog-category]').value = state.category;
+      }
+      if (elementButton) {
+        const element = elementButton.dataset.directoryElement;
+        state.element = state.element === element ? '' : element;
+        container.querySelector('[data-catalog-element]').value = state.element;
       }
       state.limit = 72;
       render();
@@ -361,10 +372,18 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const directory = container.querySelector('[data-catalog-directory]');
     const ownedTotal = records.filter(({ record }) => record.copies.length > 0).length;
     const categoryCounts = new Map();
+    const elementCounts = new Map();
     records.forEach(({ card }) => categoryCounts.set(card.category, (categoryCounts.get(card.category) || 0) + 1));
+    records.forEach(({ card }) => {
+      if (card.element && card.element !== 'None') elementCounts.set(card.element, (elementCounts.get(card.element) || 0) + 1);
+    });
     const categoryButtons = [...categoryCounts.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([category, count]) => `<button class="catalog-directory__chip${state.category === category ? ' is-active' : ''}" type="button" data-directory-category="${escapeHtml(category)}" aria-pressed="${state.category === category}"><span>${escapeHtml(category)}</span><strong>${count}</strong></button>`)
+      .join('');
+    const elementButtons = [...elementCounts.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([element, count]) => `<button class="catalog-directory__chip catalog-directory__element-chip${state.element === element ? ' is-active' : ''}" type="button" data-directory-element="${escapeHtml(element)}" aria-pressed="${state.element === element}" style="--element-accent:${elementColor(element)}"><i aria-hidden="true"></i><span>${escapeHtml(element)}</span><strong>${count}</strong></button>`)
       .join('');
 
     directory.innerHTML = `
@@ -384,7 +403,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           </button>`;
         }).join('')}
       </div>
-      <div class="catalog-directory__types" aria-label="Browse by item type"><span>Item types</span><div>${categoryButtons}</div></div>`;
+      <div class="catalog-directory__types" aria-label="Browse by item type"><span>Item types</span><div>${categoryButtons}</div></div>
+      <div class="catalog-directory__types catalog-directory__elements" aria-label="Browse by element"><span>Elements</span><div>${elementButtons}</div></div>`;
   }
 
   function renderNfcStudio(records) {
@@ -424,10 +444,13 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const releaseLine = [card.releaseYear, card.game || 'Reference'].filter(Boolean).join(' · ');
     const scanLine = identity ? `${identity.charId} · ${identity.variantId}` : 'No exact NFC identity';
     const worksWithLine = compatibilityGames.length ? compatibilityGames.join(' · ') : 'Not applicable';
+    const cardNumber = collectibleCards.indexOf(card) + 1;
     return `<article class="catalog-card" data-owned="${owned > 0}" style="--card-el:${elementColor(card.element)}">
       <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
         <img class="catalog-card__art" loading="lazy" decoding="async" src="${escapeHtml(cardArt)}" alt="Original collector-card artwork of ${escapeHtml(card.name)}" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
         <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
+        <span class="catalog-card__trading-header"><span><small>${escapeHtml(card.game || 'Vault archive')}</small><strong>${escapeHtml(card.name)}</strong></span><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
+        <span class="catalog-card__foil" aria-hidden="true"></span>
         ${owned ? `<i class="catalog-card__owned">Owned ×${owned}</i>` : ''}
         <span class="catalog-card__photo-caption">
           <small>${escapeHtml([card.element !== 'None' ? card.element : '', card.role || card.category, card.game].filter(Boolean).join(' · '))}</small>
@@ -435,6 +458,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           <em>${escapeHtml(identityLine || card.category)}</em>
           <b>${compatibilityGames.length ? `Works with: ${escapeHtml(compatibilityGames.join(' · '))}` : escapeHtml(card.category)}</b>
         </span>
+        <span class="catalog-card__serial">VAULT ${String(cardNumber).padStart(3, '0')} / ${collectibleCards.length}</span>
         <span class="catalog-card__zoom-hint" aria-hidden="true">View card + info</span>
       </button>
       <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault">+</button>

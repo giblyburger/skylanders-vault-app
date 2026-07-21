@@ -1,18 +1,18 @@
-const CACHE_NAME = 'gibly-complete-directory-v1';
+const CACHE_NAME = 'gibly-monochrome-directory-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './src/app.js?v=complete-directory-v1',
+  './src/app.js?v=monochrome-directory-v2',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=complete-directory-v1',
+  './src/components/MasterCatalog.js?v=monochrome-directory-v2',
   './src/components/CloudSync.js?v=cloud-nfc-v1',
-  './src/styles/gallery.css?v=complete-directory-v1',
+  './src/styles/gallery.css?v=monochrome-directory-v2',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
