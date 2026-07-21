@@ -1,17 +1,17 @@
-const CACHE_NAME = 'gibly-gallery-v1';
+const CACHE_NAME = 'gibly-gallery-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './src/app.js?v=gallery-v1',
+  './src/app.js?v=gallery-v2',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=gallery-v1',
-  './src/styles/gallery.css?v=gallery-v1',
+  './src/components/MasterCatalog.js?v=gallery-v2',
+  './src/styles/gallery.css?v=gallery-v2',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
@@ -36,6 +36,19 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
+        }
+        return response;
+      }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
 
   if (requestUrl.pathname.endsWith('.json')) {
     event.respondWith(
