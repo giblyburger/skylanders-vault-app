@@ -35,7 +35,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     limit: 72,
     activeCardId: '',
     nfcSelection: '',
-    status: 'Ready for a reader or compatible NFC tag.'
+    status: 'Ready for an ID or saved UID.'
   };
 
   renderShell();
@@ -77,9 +77,17 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     container.innerHTML = `
       <header class="catalog-hero">
         <div class="catalog-hero__copy">
-          <p class="eyebrow">Your collection starts here</p>
-          <h2>Every hero. One powerful vault.</h2>
+          <div class="catalog-hero__kicker">
+            <span class="catalog-hero__signal"><i aria-hidden="true"></i> Vault online</span>
+            <span>${collectibleCards.length}-piece master archive</span>
+          </div>
+          <p class="eyebrow">The definitive collection companion</p>
+          <h2><span>Every Skylander.</span><em>One living vault.</em></h2>
           <p>A pocket-ready home for every individually released figure, Trap, vehicle, crystal, Portal, item, and variant—built for fast scanning and effortless collecting.</p>
+          <div class="catalog-hero__actions" aria-label="Vault shortcuts">
+            <button class="button button--primary" type="button" data-hero-explore>Explore the vault</button>
+            <button class="button" type="button" data-hero-scan>Add a figure</button>
+          </div>
           <div class="catalog-hero__numbers" aria-label="Master catalog totals">
             <span><strong>${collectibleCards.length}</strong> obtainable pieces</span>
             <span><strong>${collectibleCards.length}</strong> original card artworks</span>
@@ -113,18 +121,18 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         </div>
       </div>
       <details class="scan-station">
-        <summary><span>Scan a figure</span><small data-scan-status>${escapeHtml(state.status)}</small></summary>
+        <summary><span>Add a figure</span><small data-scan-status>${escapeHtml(state.status)}</small></summary>
         <div class="scan-station__panel">
           <div class="scan-station__orb" aria-hidden="true"><i></i></div>
           <div class="scan-station__copy">
             <p class="eyebrow">Portal intake</p>
             <h3 id="scan-station-title">Identify and load a physical piece</h3>
             <p>Use a Character ID and Variant ID, or a UID you have already saved.</p>
-            <p class="scan-station__safety">Direct NFC uses compatible NDEF tags only. Original Skylanders game data is never overwritten.</p>
+            <p class="scan-station__safety">A Portal is required to read an original Skylanders figure. Use this field for a documented identity or a UID you already saved.</p>
           </div>
           <form class="scan-station__form" data-scan-form>
             <label>
-              <span>Reader result</span>
+              <span>Figure identity</span>
               <input data-scan-input autocomplete="off" placeholder="Character ID : Variant ID, or saved UID">
             </label>
             <button class="button button--primary" type="submit">Identify</button>
@@ -160,6 +168,16 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
   function wireShell() {
     const search = container.querySelector('[data-catalog-search]');
+    const scanStation = container.querySelector('.scan-station');
+    container.querySelector('[data-hero-explore]').addEventListener('click', () => {
+      container.querySelector('.catalog-toolbar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.setTimeout(() => search.focus({ preventScroll: true }), 420);
+    });
+    container.querySelector('[data-hero-scan]').addEventListener('click', () => {
+      scanStation.open = true;
+      scanStation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      window.setTimeout(() => container.querySelector('[data-scan-input]').focus({ preventScroll: true }), 420);
+    });
     search.addEventListener('input', () => {
       state.search = search.value;
       state.limit = 72;

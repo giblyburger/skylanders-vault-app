@@ -1,18 +1,18 @@
-const CACHE_NAME = 'gibly-polished-nfc-v3';
+const CACHE_NAME = 'gibly-obsidian-motion-v1';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './src/app.js?v=polished-nfc-v3',
+  './src/app.js?v=obsidian-motion-v1',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=polished-nfc-v3',
+  './src/components/MasterCatalog.js?v=obsidian-motion-v1',
   './src/components/CloudSync.js?v=cloud-nfc-v1',
-  './src/styles/gallery.css?v=polished-nfc-v3',
+  './src/styles/gallery.css?v=obsidian-motion-v1',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
