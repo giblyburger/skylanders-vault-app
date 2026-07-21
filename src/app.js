@@ -2,7 +2,7 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=obsidian-motion-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=complete-directory-v1';
 import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
