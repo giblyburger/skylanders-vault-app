@@ -2,12 +2,17 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=gallery-v2';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=ios-dark-v2';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
-const STORAGE_KEY = 'gibly-skylanders-master-v4';
-const LEGACY_KEYS = ['gibly-trap-team-tracker-v3', 'gibly-trap-team-3d-v2'];
+const STORAGE_KEY = 'gibly-skylanders-master-v5';
+const FRESH_START_KEY = 'gibly-skylanders-fresh-start-2026-07-21';
+const PREVIOUS_STORAGE_KEYS = [
+  'gibly-skylanders-master-v4',
+  'gibly-trap-team-tracker-v3',
+  'gibly-trap-team-3d-v2'
+];
 const DATA_URLS = {
   elements: 'src/data/elements.json',
   villains: 'src/data/villains.json',
@@ -80,6 +85,7 @@ async function init() {
     app.catalog = catalog;
     app.villainsById = new Map(villains.map((villain) => [villain.id, villain]));
     app.trapsById = new Map(traps.map((trap) => [trap.id, trap]));
+    applyFreshStartMigration();
     app.state = loadState();
     app.editor = createTrapEditor(refs.trapDialog, { onSave: saveTrap });
     app.catalogController = createMasterCatalog(refs.catalogRoot, refs.catalogDialog, catalog, {
@@ -110,19 +116,23 @@ async function loadJson(url) {
 }
 
 function freshState() {
-  return { version: 4, villains: {}, traps: {}, catalog: {} };
+  return { version: 5, villains: {}, traps: {}, catalog: {} };
 }
 
 function loadState() {
-  const keys = [STORAGE_KEY, ...LEGACY_KEYS];
-  for (const key of keys) {
-    const saved = localStorage.getItem(key);
-    if (!saved) continue;
-    try {
-      return normalizeState(JSON.parse(saved));
-    } catch {}
-  }
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return freshState();
+  try {
+    return normalizeState(JSON.parse(saved));
+  } catch {}
   return freshState();
+}
+
+function applyFreshStartMigration() {
+  if (localStorage.getItem(FRESH_START_KEY)) return;
+  PREVIOUS_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(FRESH_START_KEY, new Date().toISOString());
 }
 
 function normalizeState(raw) {
@@ -244,6 +254,11 @@ function renderAll() {
 
   renderPlacementDock(selectedTrap);
   renderSummary(refs.summary, calculateProgress(app));
+  updateOverallProgress();
+  renderCollectionViews(selectedVillain, selectedTrap, placementsByVillain);
+}
+
+function updateOverallProgress() {
   const catalogOwned = Object.values(app.state.catalog || {}).filter((record) => record.copies?.length).length;
   const catalogTotal = app.catalog?.meta.totalCards || app.catalog?.cards.length || 0;
   const catalogPercent = catalogTotal ? Math.round((catalogOwned / catalogTotal) * 100) : 0;
@@ -253,6 +268,16 @@ function renderAll() {
     meter.style.setProperty('--value', catalogPercent + '%');
     meterLabel.textContent = catalogOwned + ' of ' + catalogTotal + ' collected';
   }
+}
+
+function saveCatalogRecord(cardId, record) {
+  if (!app.catalog?.cards.some((card) => card.id === cardId)) return;
+  app.state.catalog[cardId] = record;
+  persistState();
+  updateOverallProgress();
+}
+
+function renderCollectionViews(selectedVillain, selectedTrap, placementsByVillain) {
   renderVillainBoard(refs.villainBoard, {
     elements: app.elements,
     villains: app.villains,
@@ -277,12 +302,6 @@ function renderAll() {
     onOpenTrap: openTrap
   });
   app.catalogController?.render();
-}
-
-function saveCatalogRecord(cardId, record) {
-  if (!app.catalog?.cards.some((card) => card.id === cardId)) return;
-  app.state.catalog[cardId] = record;
-  persistState();
 }
 
 function renderPlacementDock(selectedTrap) {
@@ -425,7 +444,7 @@ function getPlacementsByVillain() {
 function exportBackup() {
   const payload = {
     app: "Gibly's Skylanders Master Vault",
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
     dataset: {
       villains: app.villains.length,

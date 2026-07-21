@@ -1,17 +1,17 @@
-const CACHE_NAME = 'gibly-gallery-v2';
+const CACHE_NAME = 'gibly-ios-dark-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './src/app.js?v=gallery-v2',
+  './src/app.js?v=ios-dark-v2',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=gallery-v2',
-  './src/styles/gallery.css?v=gallery-v2',
+  './src/components/MasterCatalog.js?v=ios-dark-v2',
+  './src/styles/gallery.css?v=ios-dark-v2',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (requestUrl.pathname.endsWith('.json')) {
+  if (['.json', '.js', '.css'].some((extension) => requestUrl.pathname.endsWith(extension))) {
     event.respondWith(
       fetch(event.request).then((response) => {
         if (response.ok) {

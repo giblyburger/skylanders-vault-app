@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#18283a">
+    <meta name="theme-color" content="#050914">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gibly's Vault">
@@ -20,17 +20,23 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="public/app-icon.svg">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="src/styles/gallery.css?v=gallery-v2">
-    <script type="module" src="src/app.js?v=gallery-v2"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=ios-dark-v2">
+    <script type="module" src="src/app.js?v=ios-dark-v2"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
       <header class="app-header">
         <div class="brand-lockup">
-          <span class="brand-mark" aria-hidden="true">GV</span>
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <circle cx="24" cy="24" r="16"></circle>
+              <path d="M24 8v8M24 32v8M8 24h8M32 24h8"></path>
+              <circle cx="24" cy="24" r="6"></circle>
+            </svg>
+          </span>
           <div>
-            <p class="eyebrow">The complete collection</p>
-            <h1>Gibly's Skylanders Vault</h1>
+            <p class="eyebrow">Portal Master Companion</p>
+            <h1>Skylanders Vault</h1>
           </div>
         </div>
 
@@ -76,10 +82,10 @@
       <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
 
       <nav class="view-tabs" role="tablist" aria-label="Collection views">
-        <button class="view-tab is-active" type="button" role="tab" aria-selected="true" data-view-tab="catalog">Master Vault</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="board">Villain Board</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="rack">Trap Rack</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="reference">Board Guide</button>
+        <button class="view-tab is-active" type="button" role="tab" aria-selected="true" data-view-tab="catalog">Vault</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="board">Villains</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="rack">Traps</button>
+        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="reference">Guide</button>
       </nav>
 
       <main>

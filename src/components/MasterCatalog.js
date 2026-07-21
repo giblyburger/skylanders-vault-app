@@ -66,9 +66,9 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     container.innerHTML = `
       <header class="catalog-hero">
         <div class="catalog-hero__copy">
-          <p class="eyebrow">A living collection archive</p>
-          <h2>The whole collection, beautifully organized.</h2>
-          <p>Explore every figure, Trap, vehicle, crystal, Portal, pack, and variant in one calm, photo-first gallery.</p>
+          <p class="eyebrow">Your collection starts here</p>
+          <h2>Every hero. One powerful vault.</h2>
+          <p>A pocket-ready home for every figure, Trap, vehicle, crystal, Portal, pack, and variant—built for fast scanning and effortless collecting.</p>
           <div class="catalog-hero__numbers" aria-label="Master catalog totals">
             <span><strong>${catalog.meta.totalCards}</strong> pieces</span>
             <span><strong>${photographed}</strong> exact photos</span>
@@ -83,7 +83,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       <section class="catalog-progress" data-catalog-progress></section>
 
       <section class="catalog-toolbar" aria-label="Master catalog filters">
-        <label class="catalog-toolbar__search"><span>Search all cards</span><input data-catalog-search type="search" autocomplete="off" placeholder="Name, variant, item, ID, game…"></label>
+        <label class="catalog-toolbar__search"><span>Find a Skylander</span><input data-catalog-search type="search" autocomplete="off" placeholder="Name, variant, item, ID, or game…"></label>
         ${selectMarkup('Game', 'game', games)}
         ${selectMarkup('Type', 'category', categories)}
         ${selectMarkup('Element', 'element', elements)}
@@ -102,12 +102,12 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         </div>
       </div>
       <details class="scan-station">
-        <summary><span>Reader scanner</span><small data-scan-status>${escapeHtml(state.status)}</small></summary>
+        <summary><span>Scan a figure</span><small data-scan-status>${escapeHtml(state.status)}</small></summary>
         <div class="scan-station__panel">
           <div class="scan-station__orb" aria-hidden="true"><i></i></div>
           <div class="scan-station__copy">
-            <p class="eyebrow">Scanner intake</p>
-            <h3 id="scan-station-title">Identify a physical piece</h3>
+            <p class="eyebrow">Portal intake</p>
+            <h3 id="scan-station-title">Identify and load a physical piece</h3>
             <p>Use a Character ID and Variant ID, or a UID you have already saved.</p>
           </div>
           <form class="scan-station__form" data-scan-form>
@@ -125,6 +125,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         <p><strong>Accuracy policy:</strong> ${escapeHtml(catalog.meta.accuracyPolicy)} Market prices are dated snapshots, not permanent values. Community gameplay guides are labeled separately from manufacturer facts.</p>
         <details><summary>Data sources and credits</summary><ul>${catalog.meta.sources.map((source) => `<li><a href="${escapeHtml(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(source.name)}</a> — ${escapeHtml(source.use)}</li>`).join('')}</ul></details>
       </footer>`;
+    container.querySelector('[data-catalog-sort]').value = state.sort;
   }
 
   function wireShell() {
@@ -200,12 +201,25 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       <article><span>Wishlist</span><strong>${wishlist}</strong></article>`;
 
     const query = normalizeText(state.search);
-    let filtered = records.filter(({ card, record }) => {
-      const identityText = card.scanIdentities.map((identity) => `${identity.name} ${identity.charId} ${identity.variantId}`).join(' ');
-      const sourcedFacts = Object.entries(card.scl?.allInfo || {}).map(([key, value]) => `${key} ${value}`).join(' ');
-      const aliases = (card.scl?.aliases || []).join(' ');
-      const haystack = normalizeText(`${card.name} ${card.canonicalName || ''} ${card.baseName} ${aliases} ${sourcedFacts} ${card.category} ${card.game} ${card.element} ${card.edition} ${card.role} ${identityText}`);
-      if (query && !haystack.includes(query)) return false;
+    let filtered = records.map(({ card, record }) => {
+      const displayName = normalizeText(card.name);
+      const relatedNames = [card.canonicalName, card.baseName].filter(Boolean).map(normalizeText);
+      const aliases = (card.scl?.aliases || []).map(normalizeText);
+      const identityText = normalizeText(card.scanIdentities.map((identity) => `${identity.name} ${identity.charId} ${identity.variantId}`).join(' '));
+      const supportingText = normalizeText(`${card.id} ${card.category} ${card.element} ${card.edition} ${card.role} ${identityText}`);
+      let searchRank = 0;
+      if (query) {
+        if (displayName === query) searchRank = 0;
+        else if (displayName.startsWith(query)) searchRank = 1;
+        else if (displayName.includes(query)) searchRank = 2;
+        else if (relatedNames.some((name) => name.includes(query))) searchRank = 3;
+        else if (aliases.some((alias) => alias.includes(query))) searchRank = 4;
+        else if (supportingText.includes(query)) searchRank = 5;
+        else searchRank = -1;
+      }
+      return { card, record, searchRank };
+    }).filter(({ card, record, searchRank }) => {
+      if (query && searchRank < 0) return false;
       if (state.game && card.game !== state.game) return false;
       if (state.category && card.category !== state.category) return false;
       if (state.element && card.element !== state.element) return false;
@@ -222,7 +236,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       category: (left, right) => left.card.category.localeCompare(right.card.category) || left.card.name.localeCompare(right.card.name),
       'owned first': (left, right) => Number(right.record.copies.length > 0) - Number(left.record.copies.length > 0) || left.card.name.localeCompare(right.card.name)
     };
-    filtered.sort(sorters[state.sort] || sorters.name);
+    const activeSorter = sorters[state.sort] || sorters.name;
+    filtered.sort((left, right) => (query ? left.searchRank - right.searchRank : 0) || activeSorter(left, right));
 
     const visible = filtered.slice(0, state.limit);
     container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} items · ${filtered.filter(({ card }) => card.photoUrl).length} photos · showing ${visible.length}`;
@@ -250,6 +265,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         <span class="catalog-card__photo-caption"><small>${escapeHtml(card.category)}</small><strong>${escapeHtml(card.name)}</strong></span>
         <span class="catalog-card__zoom-hint" aria-hidden="true">View photo + info</span>
       </button>
+      <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault">+</button>
       <div class="catalog-card__body">
         <div class="catalog-card__kicker"><span>${escapeHtml(card.category)}</span><span>${escapeHtml(card.game || 'Reference')}</span></div>
         <h3>${escapeHtml(card.name)}</h3>
@@ -284,7 +300,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       notes: ''
     });
     saveRecord(cardId, record, `${card.name} added to your vault`);
-    open(cardId);
+    if (seed.openDetails) open(cardId);
   }
 
   function toggleWishlist(cardId) {
@@ -494,7 +510,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     render();
     const record = getRecord(card.id);
     const uidExists = parsed.uid && record.copies.some((copy) => normalizeScan(copy.uid) === normalizeScan(parsed.uid));
-    if (parsed.uid && !uidExists) quickAdd(card.id, { uid: parsed.uid });
+    if (parsed.uid && !uidExists) quickAdd(card.id, { uid: parsed.uid, openDetails: true });
     else open(card.id);
     callbacks.onToast(`${card.name} discovered`);
     return card;
