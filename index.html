@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gibly's Vault">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="description" content="A scan-ready Skylanders Vault with 640 original one-item collector cards, game compatibility, technical IDs, guides, and collection tracking.">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Gibly's Skylanders Master Vault">
@@ -17,11 +18,21 @@
     <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
     <meta name="twitter:image" content="public/social-preview.jpg">
     <title>Gibly's Skylanders Master Vault</title>
-    <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="public/app-icon.svg">
+    <link rel="manifest" href="manifest.webmanifest" data-app-manifest>
+    <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="src/styles/gallery.css?v=monochrome-directory-v2">
-    <script type="module" src="src/app.js?v=monochrome-directory-v2"></script>
+    <script>
+      try {
+        const displayRequest = new URLSearchParams(location.search).get('display');
+        const savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
+        if (displayRequest === 'ipad' || (displayRequest !== 'standard' && savedDisplay === 'ipad')) {
+          document.documentElement.dataset.displayMode = 'ipad';
+          document.querySelector('[data-app-manifest]').href = 'manifest-ipad.webmanifest';
+        }
+      } catch (error) {}
+    </script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=ipad-display-v1">
+    <script type="module" src="src/app.js?v=ipad-display-v1"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -47,6 +58,7 @@
 
         <div class="header-actions" aria-label="Backup and app actions">
           <span class="sync-status" data-sync-status data-state="connecting" role="status" aria-live="polite"><i></i><span>Connecting</span></span>
+          <button class="button display-mode-button" type="button" data-display-mode aria-pressed="false">iPad Display</button>
           <button class="button button--primary" type="button" data-export>Export</button>
           <button class="button" type="button" data-import>Import</button>
           <button class="button button--danger" type="button" data-reset>Reset</button>

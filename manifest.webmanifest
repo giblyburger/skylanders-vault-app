@@ -1,14 +1,28 @@
 {
   "name": "Gibly's Skylanders Vault",
   "short_name": "Skylanders Vault",
-  "description": "Track 763 Skylanders pieces with exact photos, scan identities, compatibility guides, tips, and copy-level inventory.",
+  "description": "A complete 640-piece Skylanders collection vault with original card artwork, scanning, syncing, and an iPad display mode.",
   "start_url": ".",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#050914",
-  "theme_color": "#050914",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "shortcuts": [
+    {
+      "name": "iPad Display",
+      "short_name": "Display",
+      "description": "Open the collection in the permanent iPad display layout.",
+      "url": "./?display=ipad"
+    }
+  ],
   "icons": [
+    {
+      "src": "public/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "public/app-icon.svg",
       "sizes": "any",

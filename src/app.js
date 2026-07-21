@@ -2,12 +2,13 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=monochrome-directory-v2';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=ipad-display-v1';
 import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
 const STORAGE_KEY = 'gibly-skylanders-master-v5';
+const DISPLAY_MODE_KEY = 'gibly-skylanders-display-mode';
 const FRESH_START_KEY = 'gibly-skylanders-fresh-start-2026-07-21';
 const PREVIOUS_STORAGE_KEYS = [
   'gibly-skylanders-master-v4',
@@ -69,6 +70,7 @@ const refs = {
   importButton: document.querySelector('[data-import]'),
   importFile: document.querySelector('[data-import-file]'),
   resetButton: document.querySelector('[data-reset]'),
+  displayModeButton: document.querySelector('[data-display-mode]'),
   installButton: document.querySelector('[data-install]'),
   trapDialog: document.querySelector('[data-trap-dialog]'),
   catalogRoot: document.querySelector('[data-master-catalog]'),
@@ -79,6 +81,7 @@ const refs = {
   syncStatus: document.querySelector('[data-sync-status]')
 };
 
+applyInitialDisplayMode();
 init();
 
 async function init() {
@@ -271,15 +274,69 @@ function wireEvents() {
   refs.exportButton.innerHTML = actionIcon('export') + '<span>Export</span>';
   refs.importButton.innerHTML = actionIcon('import') + '<span>Import</span>';
   refs.resetButton.innerHTML = actionIcon('reset') + '<span>Reset</span>';
+  refs.displayModeButton.innerHTML = actionIcon('display') + '<span>iPad Display</span>';
   refs.installButton.innerHTML = actionIcon('install') + '<span>Install</span>';
+
+  applyDisplayMode(document.documentElement.dataset.displayMode === 'ipad', { persist: false, updateUrl: false });
 
   refs.exportButton.addEventListener('click', exportBackup);
   refs.importButton.addEventListener('click', () => refs.importFile.click());
   refs.importFile.addEventListener('change', importBackup);
   refs.resetButton.addEventListener('click', resetProgress);
+  refs.displayModeButton.addEventListener('click', toggleDisplayMode);
   window.addEventListener('hashchange', openNfcDeepLink);
   setupBoardTilt();
   setupInstallPrompt();
+}
+
+function applyInitialDisplayMode() {
+  let enabled = document.documentElement.dataset.displayMode === 'ipad';
+  try {
+    const request = new URLSearchParams(window.location.search).get('display');
+    if (request === 'ipad') enabled = true;
+    if (request === 'standard') enabled = false;
+  } catch (error) {}
+  applyDisplayMode(enabled, { persist: false, updateUrl: false });
+}
+
+function toggleDisplayMode() {
+  const enabled = document.documentElement.dataset.displayMode !== 'ipad';
+  applyDisplayMode(enabled, { persist: true, updateUrl: true });
+  if (enabled) setView('catalog');
+  showToast(enabled
+    ? 'iPad Display is on. Use Screen Mirroring to send it to your TV.'
+    : 'Standard layout restored.');
+}
+
+function applyDisplayMode(enabled, options = {}) {
+  const mode = enabled ? 'ipad' : 'standard';
+  document.documentElement.dataset.displayMode = mode;
+  if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
+  const manifest = document.querySelector('[data-app-manifest]');
+  if (manifest) manifest.href = enabled ? 'manifest-ipad.webmanifest' : 'manifest.webmanifest';
+
+  if (refs.displayModeButton) {
+    refs.displayModeButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    refs.displayModeButton.classList.toggle('is-active', enabled);
+    const label = refs.displayModeButton.querySelector('span');
+    if (label) label.textContent = enabled ? 'Display On' : 'iPad Display';
+  }
+
+  if (options.persist) {
+    try {
+      if (enabled) localStorage.setItem(DISPLAY_MODE_KEY, 'ipad');
+      else localStorage.removeItem(DISPLAY_MODE_KEY);
+    } catch (error) {}
+  }
+
+  if (options.updateUrl && window.history && window.history.replaceState) {
+    try {
+      const url = new URL(window.location.href);
+      if (enabled) url.searchParams.set('display', 'ipad');
+      else url.searchParams.delete('display');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    } catch (error) {}
+  }
 }
 
 function openNfcDeepLink() {
@@ -586,6 +643,17 @@ function setupBoardTilt() {
 
 function setupInstallPrompt() {
   let deferredPrompt = null;
+  const appleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.navigator.standalone === true
+    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+  if (appleMobile && !standalone) {
+    refs.installButton.hidden = false;
+    const label = refs.installButton.querySelector('span');
+    if (label) label.textContent = 'Add to Home';
+  }
+
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
@@ -593,7 +661,10 @@ function setupInstallPrompt() {
   });
 
   refs.installButton.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      if (appleMobile) showToast('In Safari, tap Share, then Add to Home Screen.');
+      return;
+    }
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
@@ -603,7 +674,7 @@ function setupInstallPrompt() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  navigator.serviceWorker.register('sw.js?v=monochrome-directory-v2', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=ipad-display-v1', { updateViaCache: 'none' })
     .then((registration) => registration.update())
     .catch(() => {});
 }

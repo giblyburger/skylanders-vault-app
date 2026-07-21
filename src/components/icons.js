@@ -17,6 +17,7 @@ const actionPaths = {
   import: '<path d="M12 21V11m0 0 4 4m-4-4-4 4M5 9V5h14v4"/>',
   reset: '<path d="M5 7v5h5M5.7 12A6.5 6.5 0 1 0 8 5.4"/>',
   search: '<path d="m20 20-4.5-4.5M18 10.8a7.2 7.2 0 1 1-14.4 0 7.2 7.2 0 0 1 14.4 0Z"/>',
+  display: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/>',
   install: '<path d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 17.5h14V21H5z"/>',
   edit: '<path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16v4Zm10.5-14.5 4 4"/>',
   place: '<path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/>',
