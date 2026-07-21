@@ -34,6 +34,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     layout: 'photos',
     limit: 72,
     activeCardId: '',
+    nfcSelection: '',
     status: 'Ready for a reader or compatible NFC tag.'
   };
 
@@ -128,10 +129,24 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
             </label>
             <button class="button button--primary" type="submit">Identify</button>
           </form>
-          <div class="nfc-actions">
-            <button class="button" type="button" data-nfc-scan>Scan NFC tag</button>
-            <span data-nfc-capability></span>
-          </div>
+          <section class="nfc-studio" aria-labelledby="nfc-studio-title">
+            <div class="nfc-studio__intro">
+              <p class="eyebrow">Personal tag studio</p>
+              <strong id="nfc-studio-title">Read, write, or rewrite a Vault tag</strong>
+              <span>Links a blank or personal NDEF tag to one saved copy. Original Skylanders tags are read-only here.</span>
+            </div>
+            <label class="nfc-studio__select">
+              <span>Copy to link</span>
+              <select data-nfc-copy-select aria-label="Choose an owned copy for the NFC tag">
+                <option value="">Add a copy to begin</option>
+              </select>
+            </label>
+            <div class="nfc-actions">
+              <button class="button" type="button" data-nfc-scan>Read tag</button>
+              <button class="button button--primary" type="button" data-nfc-write>Write / rewrite tag</button>
+            </div>
+            <span class="nfc-studio__capability" data-nfc-capability></span>
+          </section>
         </div>
       </details>
       <div class="catalog-grid" data-catalog-grid data-layout="photos"></div>
@@ -188,13 +203,30 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
 
     const nfcButton = container.querySelector('[data-nfc-scan]');
+    const nfcWriteButton = container.querySelector('[data-nfc-write]');
+    const nfcCopySelect = container.querySelector('[data-nfc-copy-select]');
     const nfcCapability = container.querySelector('[data-nfc-capability]');
-    const nfcSupported = 'NDEFReader' in window;
+    const nfcSupported = window.isSecureContext && 'NDEFReader' in window;
     nfcButton.disabled = !nfcSupported;
+    nfcWriteButton.disabled = true;
     nfcCapability.textContent = nfcSupported
-      ? 'Direct read and write available on this device'
-      : 'Use the manual reader field on this device';
+      ? 'Direct NFC is ready. Choose one of your saved copies to write a personal tag.'
+      : 'Direct NFC requires a compatible Web NFC browser. The manual reader field still works here.';
     nfcButton.addEventListener('click', scanNfc);
+    nfcCopySelect.addEventListener('change', () => {
+      state.nfcSelection = nfcCopySelect.value;
+      nfcWriteButton.disabled = !nfcSupported || !state.nfcSelection;
+    });
+    nfcWriteButton.addEventListener('click', () => {
+      const [cardId, copyId] = state.nfcSelection.split('::');
+      const card = cardsById.get(cardId);
+      const copy = card ? getRecord(cardId).copies.find((item) => item.id === copyId) : null;
+      if (!card || !copy) {
+        callbacks.onToast('Choose a saved physical copy first.');
+        return;
+      }
+      writeNfc(card, copy);
+    });
 
     container.querySelector('[data-catalog-grid]').addEventListener('click', (event) => {
       const action = event.target.closest('[data-card-action]');
@@ -223,6 +255,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       <article><span>Physical pieces</span><strong>${ownedPieces}</strong></article>
       <article><span>Scanned copies</span><strong>${scannedPieces}</strong></article>
       <article><span>Wishlist</span><strong>${wishlist}</strong></article>`;
+    renderNfcStudio(records);
 
     const query = normalizeText(state.search);
     let filtered = records.map(({ card, record }) => {
@@ -275,15 +308,43 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     container.querySelectorAll('[data-scan-status]').forEach((node) => { node.textContent = state.status; });
   }
 
+  function renderNfcStudio(records) {
+    const select = container.querySelector('[data-nfc-copy-select]');
+    const writeButton = container.querySelector('[data-nfc-write]');
+    const capability = container.querySelector('[data-nfc-capability]');
+    if (!select || !writeButton || !capability) return;
+    const nfcSupported = window.isSecureContext && 'NDEFReader' in window;
+    const choices = records.flatMap(({ card, record }) => record.copies.map((copy, index) => ({
+      value: `${card.id}::${copy.id}`,
+      label: `${card.name} · Copy ${index + 1}${copy.uid ? ` · ${copy.uid}` : ''}`
+    })));
+    if (!choices.some((choice) => choice.value === state.nfcSelection)) {
+      state.nfcSelection = choices.length === 1 ? choices[0].value : '';
+    }
+    select.innerHTML = choices.length
+      ? `<option value="">Choose one of ${choices.length} saved ${choices.length === 1 ? 'copy' : 'copies'}</option>${choices.map((choice) => `<option value="${escapeHtml(choice.value)}" ${choice.value === state.nfcSelection ? 'selected' : ''}>${escapeHtml(choice.label)}</option>`).join('')}`
+      : '<option value="">Add a copy to begin</option>';
+    select.disabled = choices.length === 0;
+    writeButton.disabled = !nfcSupported || !state.nfcSelection;
+    capability.textContent = nfcSupported
+      ? choices.length
+        ? 'Ready for compatible writable NDEF tags. Writing replaces the tag’s existing NDEF message.'
+        : 'Add a physical copy to any card, then return here to write its personal Vault tag.'
+      : 'Direct NFC is unavailable in this browser. You can still scan with an external reader and paste its result above.';
+  }
+
   function cardMarkup(card, record) {
     const owned = record.copies.length;
     const scanned = record.copies.filter((copy) => copy.uid).length;
     const identity = card.scanIdentities[0];
     const compatibilityGames = Object.entries(card.compatibility || {}).filter(([, value]) => String(value).startsWith('yes')).map(([game]) => GAME_SHORT[game] || game);
-    const compatibilityCount = compatibilityGames.length;
     const verification = verificationLabel(card.verification?.status);
     const cardArt = cardArtworkUrl(card);
     const identityLine = [card.releaseYear, identity?.charId ? `ID ${identity.charId}` : '', identity?.variantId ? `VARIANT ${identity.variantId}` : ''].filter(Boolean).join(' · ');
+    const seriesLine = [card.element !== 'None' ? card.element : '', card.scl?.series || card.role, card.edition && card.edition !== 'Standard' ? card.edition : ''].filter(Boolean).join(' · ') || 'Source-backed catalog record';
+    const releaseLine = [card.releaseYear, card.game || 'Reference'].filter(Boolean).join(' · ');
+    const scanLine = identity ? `${identity.charId} · ${identity.variantId}` : 'No exact NFC identity';
+    const worksWithLine = compatibilityGames.length ? compatibilityGames.join(' · ') : 'Not applicable';
     return `<article class="catalog-card" data-owned="${owned > 0}" style="--card-el:${elementColor(card.element)}">
       <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
         <img class="catalog-card__art" loading="lazy" decoding="async" src="${escapeHtml(cardArt)}" alt="Original collector-card artwork of ${escapeHtml(card.name)}" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
@@ -299,13 +360,17 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       </button>
       <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault">+</button>
       <div class="catalog-card__body">
-        <div class="catalog-card__kicker"><span>${escapeHtml(card.category)}</span><span>${escapeHtml(card.game || 'Reference')}</span></div>
+        <div class="catalog-card__kicker"><span class="catalog-card__element">${escapeHtml(card.element !== 'None' ? card.element : 'Item')}</span><span>${escapeHtml(card.category)}</span></div>
         <h3>${escapeHtml(card.name)}</h3>
-        <p>${escapeHtml([card.element !== 'None' ? card.element : '', card.scl?.series || card.role, card.edition && card.edition !== 'Standard' ? card.edition : ''].filter(Boolean).join(' · ') || 'Source-backed catalog record')}</p>
+        <p class="catalog-card__series">${escapeHtml(seriesLine)}</p>
+        <dl class="catalog-card__meta">
+          <div><dt>Released</dt><dd>${escapeHtml(releaseLine)}</dd></div>
+          <div><dt>Tag identity</dt><dd class="catalog-card__scan-id">${escapeHtml(scanLine)}</dd></div>
+          <div><dt>Works with</dt><dd>${escapeHtml(worksWithLine)}</dd></div>
+        </dl>
         <span class="catalog-verification" data-level="${escapeHtml(verification.level)}">${escapeHtml(verification.label)}</span>
         <div class="catalog-card__facts">
-          <span title="Compatible games">${compatibilityCount ? `${compatibilityCount} game${compatibilityCount === 1 ? '' : 's'}` : 'Compatibility N/A'}</span>
-          <span title="Scanner status">${identity ? `${identity.charId} / ${identity.variantId}` : 'No exact scan link'}</span>
+          ${owned ? `<span>${owned} owned</span>` : '<span>Not owned</span>'}
           ${scanned ? `<span>${scanned} scanned</span>` : ''}
         </div>
       </div>
@@ -510,7 +575,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
 
     dialog.querySelectorAll('[data-nfc-write-copy]').forEach((button) => {
-      button.disabled = !('NDEFReader' in window);
+      button.disabled = !(window.isSecureContext && 'NDEFReader' in window);
+      if (button.disabled) button.title = 'Direct NFC writing is unavailable in this browser.';
       button.addEventListener('click', () => {
         const updated = readRecordFromDialog(record);
         const copy = updated.copies.find((item) => item.id === button.dataset.nfcWriteCopy);
@@ -608,7 +674,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   }
 
   async function scanNfc() {
-    if (!('NDEFReader' in window)) {
+    if (!window.isSecureContext || !('NDEFReader' in window)) {
       state.status = 'Direct web NFC is unavailable here. Use the reader result field instead.';
       callbacks.onToast(state.status);
       render();
@@ -674,35 +740,56 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   }
 
   async function writeNfc(card, copy) {
-    if (!('NDEFReader' in window)) {
-      callbacks.onToast('Direct NFC writing is unavailable on this device.');
+    if (!window.isSecureContext || !('NDEFReader' in window)) {
+      state.status = 'Direct NFC writing is unavailable in this browser.';
+      callbacks.onToast(state.status);
+      render();
       return false;
     }
-    const approved = confirm('Write or rewrite this Vault link onto a compatible writable NDEF tag? This replaces the tag’s existing NDEF message. Use only a blank or personal tag—never an original Skylanders figure.');
+    const approved = confirm(`Write ${card.name} · Copy ${copy.id.slice(-6)} to a compatible personal NFC tag? This rewrites the tag’s existing NDEF message. Never use an original Skylanders figure.`);
     if (!approved) return false;
+    const identity = card.scanIdentities?.[0] || null;
     const payload = {
       app: 'gibly-skylanders-vault',
-      version: 1,
+      version: 2,
       cardId: card.id,
       cardName: card.name,
       copyId: copy.id,
-      uid: copy.uid || ''
+      uid: copy.uid || '',
+      charId: identity?.charId || '',
+      variantId: identity?.variantId || '',
+      writtenAt: new Date().toISOString()
     };
     try {
       state.status = 'Hold your compatible writable NFC tag near the phone…';
       render();
       const writer = new NDEFReader();
-      await writer.write({ records: [{
-        recordType: 'mime',
-        mediaType: 'application/vnd.gibly.skylanders+json',
-        data: JSON.stringify(payload)
-      }] }, { overwrite: true });
+      const tagUrl = new URL(window.location.href);
+      tagUrl.search = '';
+      tagUrl.hash = `vault-card=${encodeURIComponent(card.id)}`;
+      await writer.write({ records: [
+        {
+          recordType: 'mime',
+          mediaType: 'application/vnd.gibly.skylanders+json',
+          data: JSON.stringify(payload)
+        },
+        {
+          recordType: 'url',
+          data: tagUrl.href
+        }
+      ] }, { overwrite: true });
       state.status = `${card.name} Vault link written to NFC.`;
-      callbacks.onToast('NFC tag written successfully');
+      callbacks.onToast('Personal NFC tag written successfully');
       render();
       return true;
     } catch (error) {
-      state.status = error?.name === 'NotAllowedError' ? 'NFC write permission was not granted.' : 'That tag could not be written.';
+      const messages = {
+        NotAllowedError: 'NFC write permission was not granted.',
+        NotSupportedError: 'This tag or browser does not support NDEF writing.',
+        NetworkError: 'That NFC tag is read-only or moved away too soon.',
+        AbortError: 'NFC writing was cancelled.'
+      };
+      state.status = messages[error?.name] || 'That personal NFC tag could not be written. Try a blank writable NDEF tag.';
       callbacks.onToast(state.status);
       render();
       return false;
@@ -755,7 +842,7 @@ function verificationLabel(status) {
 function copyMarkup(copy, index) {
   const photos = Array.isArray(copy.photos) ? copy.photos.filter(Boolean) : [];
   return `<article class="catalog-copy" data-copy="${escapeHtml(copy.id)}">
-    <header><strong>Copy ${index + 1}</strong><div class="catalog-copy__header-actions"><button class="button" type="button" data-nfc-write-copy="${escapeHtml(copy.id)}">Write / rewrite NFC</button><button class="button button--danger" type="button" data-remove-copy="${escapeHtml(copy.id)}">Remove</button></div></header>
+    <header><strong>Copy ${index + 1}</strong><div class="catalog-copy__header-actions"><button class="button button--tag" type="button" data-nfc-write-copy="${escapeHtml(copy.id)}" title="Write this copy to a blank or personal writable NDEF tag">Write / rewrite tag</button><button class="button button--danger" type="button" data-remove-copy="${escapeHtml(copy.id)}">Remove</button></div></header>
     <div class="catalog-copy__grid">
       <label><span>Scan UID</span><input data-copy-uid value="${escapeHtml(copy.uid)}" placeholder="Filled by reader or paste manually"></label>
       <label><span>Condition</span><select data-copy-condition>${optionsMarkup(CONDITION_OPTIONS, copy.condition)}</select></label>
