@@ -1,9 +1,26 @@
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { cloudflare } from '@cloudflare/vite-plugin';
-import { defineConfig } from 'vite';
+import { defineConfig, transformWithEsbuild } from 'vite';
 
 const ROOT = process.cwd();
+
+async function transpileForOlderSafari(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  await Promise.all(entries.map(async (entry) => {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) return transpileForOlderSafari(path);
+    if (!entry.name.endsWith('.js')) return;
+    const source = await readFile(path, 'utf8');
+    const result = await transformWithEsbuild(source, path, {
+      loader: 'js',
+      format: 'esm',
+      target: 'safari12',
+      minify: false
+    });
+    await writeFile(path, result.code);
+  }));
+}
 
 function preserveStaticVault() {
   return {
@@ -21,6 +38,7 @@ function preserveStaticVault() {
       for (const file of ['index.html', 'manifest.webmanifest', 'sw.js']) {
         await cp(resolve(ROOT, file), resolve(client, file));
       }
+      await transpileForOlderSafari(resolve(client, 'src'));
       await mkdir(server, { recursive: true });
       await cp(worker, resolve(server, 'index.js'));
     }

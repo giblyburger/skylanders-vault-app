@@ -32,6 +32,7 @@ const UNRELEASED_CARD_IDS = new Set([
 export function createMasterCatalog(container, dialog, catalog, callbacks) {
   const cardsById = new Map(catalog.cards.map((card) => [card.id, card]));
   const collectibleCards = catalog.cards.filter(isCollectibleCard);
+  const pageSize = /iPad/i.test(navigator.userAgent) || document.documentElement.dataset.displayMode === 'ipad' ? 36 : 72;
   const referenceCount = catalog.cards.length - collectibleCards.length + (catalog.scanCatalog || catalog.unmappedScanIdentities || []).filter((identity) => ['technical-only', 'in-game/digital'].includes(identity.releaseStatus)).length;
   const state = {
     search: '',
@@ -41,7 +42,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     ownership: '',
     sort: 'name',
     layout: 'photos',
-    limit: 72,
+    limit: pageSize,
     activeCardId: '',
     nfcSelection: '',
     status: 'Ready for an ID or saved UID.'
@@ -215,26 +216,26 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         state.element = state.element === element ? '' : element;
         container.querySelector('[data-catalog-element]').value = state.element;
       }
-      state.limit = 72;
+      state.limit = pageSize;
       render();
       container.querySelector('.catalog-results-head').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     search.addEventListener('input', () => {
       state.search = search.value;
-      state.limit = 72;
+      state.limit = pageSize;
       render();
     });
 
     ['game', 'category', 'element', 'ownership', 'sort'].forEach((key) => {
       container.querySelector(`[data-catalog-${key}]`).addEventListener('change', (event) => {
         state[key] = event.target.value;
-        state.limit = 72;
+        state.limit = pageSize;
         render();
       });
     });
 
     container.querySelector('[data-catalog-clear]').addEventListener('click', () => {
-      Object.assign(state, { search: '', game: '', category: '', element: '', ownership: '', sort: 'name', limit: 72 });
+      Object.assign(state, { search: '', game: '', category: '', element: '', ownership: '', sort: 'name', limit: pageSize });
       search.value = '';
       ['game', 'category', 'element', 'ownership', 'sort'].forEach((key) => {
         container.querySelector(`[data-catalog-${key}]`).value = key === 'sort' ? 'name' : '';
@@ -243,7 +244,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
 
     container.querySelector('[data-catalog-more]').addEventListener('click', () => {
-      state.limit += 72;
+      state.limit += pageSize;
       render();
     });
 
@@ -366,6 +367,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
     container.querySelector('[data-catalog-more]').hidden = state.limit >= filtered.length;
     container.querySelectorAll('[data-scan-status]').forEach((node) => { node.textContent = state.status; });
+    if (callbacks.onGameChange) callbacks.onGameChange(state.game);
   }
 
   function renderDirectory(records) {
@@ -522,7 +524,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       saveRecord(cardId, record);
     }
     renderDialog(card);
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) showVaultDialog(dialog);
     return true;
   }
 
@@ -900,11 +902,46 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   }
 
   function closeDialog() {
-    if (dialog.open) dialog.close();
+    if (dialog.open || dialog.hasAttribute('open')) closeVaultDialog(dialog);
     state.activeCardId = '';
   }
 
-  return { render, open, identifyScan, scanNfc, writeNfc, meta: catalog.meta };
+  function setGameFilter(game) {
+    const allowed = new Set(["Spyro's Adventure", 'Giants', 'SWAP Force', 'Trap Team', 'SuperChargers', 'Imaginators']);
+    const selectedGame = allowed.has(game) ? game : '';
+    Object.assign(state, { search: '', game: selectedGame, category: '', element: '', ownership: '', limit: pageSize });
+    const search = container.querySelector('[data-catalog-search]');
+    if (search) search.value = '';
+    ['game', 'category', 'element', 'ownership'].forEach((key) => {
+      const field = container.querySelector(`[data-catalog-${key}]`);
+      if (field) field.value = key === 'game' ? selectedGame : '';
+    });
+    render();
+    const directory = container.querySelector('[data-catalog-directory]');
+    if (directory) {
+      try { directory.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      catch (error) { directory.scrollIntoView(); }
+    }
+  }
+
+  return { render, open, identifyScan, scanNfc, writeNfc, setGameFilter, meta: catalog.meta };
+}
+
+function showVaultDialog(dialog) {
+  if (typeof dialog.showModal === 'function') {
+    dialog.showModal();
+    return;
+  }
+  dialog.setAttribute('open', '');
+  dialog.classList.add('dialog-shell--fallback');
+  document.body.classList.add('dialog-fallback-active');
+}
+
+function closeVaultDialog(dialog) {
+  if (typeof dialog.close === 'function') dialog.close();
+  else dialog.removeAttribute('open');
+  dialog.classList.remove('dialog-shell--fallback');
+  document.body.classList.remove('dialog-fallback-active');
 }
 
 function selectMarkup(label, key, options) {

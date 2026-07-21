@@ -2,7 +2,7 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=ipad-display-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=full-series-legacy-v1';
 import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
@@ -65,6 +65,7 @@ const refs = {
   moldFilter: document.querySelector('[data-filter-mold]'),
   groupFilter: document.querySelector('[data-filter-group]'),
   tabs: Array.from(document.querySelectorAll('[data-view-tab]')),
+  gameNav: Array.from(document.querySelectorAll('[data-game-nav]')),
   views: Array.from(document.querySelectorAll('[data-view]')),
   exportButton: document.querySelector('[data-export]'),
   importButton: document.querySelector('[data-import]'),
@@ -106,6 +107,7 @@ async function init() {
       getState: () => app.state,
       onSave: saveCatalogRecord,
       onToast: showToast,
+      onGameChange: updateGameNavigation,
       onUploadPhoto: (...args) => app.cloudSync?.uploadPhoto(...args),
       onDeletePhoto: (...args) => app.cloudSync?.deletePhoto(...args)
     });
@@ -271,6 +273,13 @@ function wireEvents() {
     tab.addEventListener('click', () => setView(tab.dataset.viewTab));
   });
 
+  refs.gameNav.forEach((button) => {
+    button.addEventListener('click', () => {
+      setView('catalog');
+      app.catalogController?.setGameFilter(button.dataset.gameNav || '');
+    });
+  });
+
   refs.exportButton.innerHTML = actionIcon('export') + '<span>Export</span>';
   refs.importButton.innerHTML = actionIcon('import') + '<span>Import</span>';
   refs.resetButton.innerHTML = actionIcon('reset') + '<span>Reset</span>';
@@ -361,8 +370,18 @@ function setView(viewName) {
     view.hidden = !active;
   });
 
+  if (viewName !== 'catalog') updateGameNavigation(null);
+
   if (!['board', 'rack'].includes(viewName)) refs.placementDock.hidden = true;
   else if (app.selectedTrapId) renderPlacementDock(app.trapsById.get(app.selectedTrapId));
+}
+
+function updateGameNavigation(game) {
+  refs.gameNav.forEach((button) => {
+    const active = game !== null && button.dataset.gameNav === game;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
 
 function renderAll() {
@@ -674,7 +693,7 @@ function setupInstallPrompt() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  navigator.serviceWorker.register('sw.js?v=ipad-display-v1', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=full-series-legacy-v1', { updateViaCache: 'none' })
     .then((registration) => registration.update())
     .catch(() => {});
 }

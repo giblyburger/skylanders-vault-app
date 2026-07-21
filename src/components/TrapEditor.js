@@ -26,7 +26,10 @@ export function createTrapEditor(dialog, callbacks) {
   const assignedSelect = dialog.querySelector('[data-editor-assigned]');
 
   function close() {
-    dialog.close();
+    if (typeof dialog.close === 'function') dialog.close();
+    else dialog.removeAttribute('open');
+    dialog.classList.remove('dialog-shell--fallback');
+    document.body.classList.remove('dialog-fallback-active');
     activeTrap = null;
     activeContext = null;
   }
@@ -91,7 +94,14 @@ export function createTrapEditor(dialog, callbacks) {
       assignedSelect.value = '';
     }
 
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open && !dialog.hasAttribute('open')) {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else {
+        dialog.setAttribute('open', '');
+        dialog.classList.add('dialog-shell--fallback');
+        document.body.classList.add('dialog-fallback-active');
+      }
+    }
     qtyInput.focus();
     qtyInput.select();
   }

@@ -22,17 +22,33 @@
     <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
     <script>
+      if (!Promise.allSettled) {
+        Promise.allSettled = function (items) {
+          return Promise.all(Array.from(items).map(function (item) {
+            return Promise.resolve(item).then(function (value) {
+              return { status: 'fulfilled', value: value };
+            }, function (reason) {
+              return { status: 'rejected', reason: reason };
+            });
+          }));
+        };
+      }
+      if (!Array.prototype.flatMap) {
+        Array.prototype.flatMap = function (callback, thisArg) {
+          return Array.prototype.concat.apply([], this.map(callback, thisArg));
+        };
+      }
       try {
-        const displayRequest = new URLSearchParams(location.search).get('display');
-        const savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
+        var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
+        var savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
         if (displayRequest === 'ipad' || (displayRequest !== 'standard' && savedDisplay === 'ipad')) {
           document.documentElement.dataset.displayMode = 'ipad';
           document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=ipad-display-v1">
-    <script type="module" src="src/app.js?v=ipad-display-v1"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=full-series-legacy-v1">
+    <script type="module" src="src/app.js?v=full-series-legacy-v1"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -94,11 +110,15 @@
 
       <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
 
-      <nav class="view-tabs" role="tablist" aria-label="Collection views">
-        <button class="view-tab is-active" type="button" role="tab" aria-selected="true" data-view-tab="catalog">Collection</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="board">TT Villains</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="rack">TT Traps</button>
-        <button class="view-tab" type="button" role="tab" aria-selected="false" data-view-tab="reference">Guide</button>
+      <nav class="view-tabs series-navigation" aria-label="Browse every Skylanders game">
+        <button class="view-tab series-nav__game is-active" type="button" data-game-nav="" aria-pressed="true">All Games</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Spyro's Adventure" aria-pressed="false" style="--series-nav-accent:#8f65d8">Spyro’s Adventure</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Giants" aria-pressed="false" style="--series-nav-accent:#ef573f">Giants</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="SWAP Force" aria-pressed="false" style="--series-nav-accent:#79d8e7">SWAP Force</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Trap Team" aria-pressed="false" style="--series-nav-accent:#269ee8">Trap Team</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="SuperChargers" aria-pressed="false" style="--series-nav-accent:#e6a13a">SuperChargers</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Imaginators" aria-pressed="false" style="--series-nav-accent:#60bf58">Imaginators</button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="reference" aria-selected="false">Series Guide</button>
       </nav>
 
       <main>
@@ -140,10 +160,29 @@
         </section>
 
         <section class="view" data-view="reference" hidden>
-          <figure class="reference-view">
-            <img src="public/board-reference.jpg" alt="Gibly's physical Skylanders Trap Team storage board with Trap pieces placed above villain slots">
-            <figcaption>Physical board reference</figcaption>
-          </figure>
+          <section class="series-guide">
+            <header class="series-guide__hero">
+              <p class="eyebrow">Complete six-game reference</p>
+              <h2>One vault. Every era.</h2>
+              <p>Browse the full console series in release order, understand forward compatibility, and open specialized tools only when you need them.</p>
+            </header>
+            <div class="series-guide__grid">
+              <article style="--guide-accent:#8f65d8"><small>2011 · Game 01</small><h3>Spyro’s Adventure</h3><p>The original 32-character roster, Adventure Packs, Magic Items, and first-generation Portal.</p></article>
+              <article style="--guide-accent:#ef573f"><small>2012 · Game 02</small><h3>Giants</h3><p>Giants, LightCores, Series 2 figures, and the expanded returning roster.</p></article>
+              <article style="--guide-accent:#79d8e7"><small>2013 · Game 03</small><h3>SWAP Force</h3><p>Swappable characters, new cores, Series 3 figures, and location pieces.</p></article>
+              <article style="--guide-accent:#269ee8"><small>2014 · Game 04</small><h3>Trap Team</h3><p>Trap Masters, Minis, villain Traps, and the Traptanium Portal system.</p></article>
+              <article style="--guide-accent:#e6a13a"><small>2015 · Game 05</small><h3>SuperChargers</h3><p>Drivers, vehicles, terrain classes, trophies, and SuperCharged pairings.</p></article>
+              <article style="--guide-accent:#60bf58"><small>2016 · Game 06</small><h3>Imaginators</h3><p>Senseis, Creation Crystals, Imaginite Chests, and the final main release line.</p></article>
+            </div>
+            <section class="compatibility-primer">
+              <div><p class="eyebrow">Quick compatibility rule</p><h3>Figures generally work forward, not backward.</h3><p>A figure works in the game it debuted with and later games. Game-specific hardware, vehicles, Traps, and Creation Crystals have additional rules shown on their individual cards.</p></div>
+              <ol><li><strong>Find its debut game</strong><span>Shown on every Vault card.</span></li><li><strong>Check “Works with”</strong><span>Exact supported games are listed.</span></li><li><strong>Use the matching Portal</strong><span>Portal requirements remain hardware-specific.</span></li></ol>
+            </section>
+            <section class="specialized-tools-panel">
+              <div><p class="eyebrow">Optional specialized tools</p><h3>Trap Team workspace</h3><p>The villain board and physical Trap rack are preserved here without taking over the full-series experience.</p></div>
+              <div><button class="button" type="button" data-view-tab="board">Open Villain Vault</button><button class="button" type="button" data-view-tab="rack">Open Trap Rack</button></div>
+            </section>
+          </section>
         </section>
       </main>
     </div>
