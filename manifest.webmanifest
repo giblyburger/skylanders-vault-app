@@ -1,13 +1,13 @@
 {
   "name": "Gibly's Skylanders Master Vault",
   "short_name": "Gibly's Vault",
-  "description": "Track 714 Skylanders collector products with scan identities, photos, compatibility guides, tips, and copy-level inventory.",
+  "description": "Track 763 Skylanders pieces with exact photos, scan identities, compatibility guides, tips, and copy-level inventory.",
   "start_url": ".",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#101317",
-  "theme_color": "#0b4f79",
+  "background_color": "#090a0d",
+  "theme_color": "#101216",
   "icons": [
     {
       "src": "public/app-icon.svg",
