@@ -1,7 +1,7 @@
 {
   "name": "Gibly's Skylanders Vault",
   "short_name": "Skylanders Vault",
-  "description": "A complete 640-piece Skylanders collection vault with original card artwork, scanning, syncing, and an iPad display mode.",
+  "description": "An offline-first 640-piece Skylanders collection vault with complete card artwork, local collecting, optional cloud syncing, and an iPad display mode.",
   "start_url": ".",
   "scope": "./",
   "display": "standalone",

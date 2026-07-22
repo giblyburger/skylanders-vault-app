@@ -2,8 +2,8 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=private-pairing-v1';
-import { createCloudSync } from './components/CloudSync.js?v=private-pairing-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=offline-ipad-v1';
+import { createCloudSync } from './components/CloudSync.js?v=offline-ipad-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -52,6 +52,7 @@ const app = {
   lastPlacement: null,
   placementTimer: null
 };
+let offlineRegistration = null;
 
 const refs = {
   appRoot: document.querySelector('[data-app-root]'),
@@ -73,6 +74,7 @@ const refs = {
   resetButton: document.querySelector('[data-reset]'),
   displayModeButton: document.querySelector('[data-display-mode]'),
   installButton: document.querySelector('[data-install]'),
+  offlineButton: document.querySelector('[data-offline-library]'),
   pairingDialog: document.querySelector('[data-pairing-dialog]'),
   pairingForm: document.querySelector('[data-pairing-form]'),
   pairingCode: document.querySelector('[data-pairing-code]'),
@@ -293,6 +295,7 @@ function wireEvents() {
   refs.resetButton.innerHTML = actionIcon('reset') + '<span>Reset</span>';
   refs.displayModeButton.innerHTML = actionIcon('display') + '<span>iPad Display</span>';
   refs.installButton.innerHTML = actionIcon('install') + '<span>Install</span>';
+  refs.offlineButton.innerHTML = actionIcon('install') + '<span>Offline Library</span>';
 
   applyDisplayMode(document.documentElement.dataset.displayMode === 'ipad', { persist: false, updateUrl: false });
 
@@ -301,6 +304,7 @@ function wireEvents() {
   refs.importFile.addEventListener('change', importBackup);
   refs.resetButton.addEventListener('click', resetProgress);
   refs.displayModeButton.addEventListener('click', toggleDisplayMode);
+  refs.offlineButton.addEventListener('click', downloadOfflineLibrary);
   refs.syncStatus?.addEventListener('click', () => {
     if (refs.syncStatus.dataset.state === 'locked') openPairingDialog();
   });
@@ -770,10 +774,88 @@ function setupInstallPrompt() {
 }
 
 function registerServiceWorker() {
-  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  navigator.serviceWorker.register('sw.js?v=private-pairing-v1', { updateViaCache: 'none' })
-    .then((registration) => registration.update())
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') {
+    refs.offlineButton.hidden = true;
+    return;
+  }
+  navigator.serviceWorker.addEventListener('message', handleOfflineLibraryMessage);
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.ready.then((registration) => {
+      offlineRegistration = registration;
+      postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
+    }).catch(() => {});
+  });
+  navigator.serviceWorker.register('sw.js?v=offline-ipad-v1', { updateViaCache: 'none' })
+    .then((registration) => {
+      offlineRegistration = registration;
+      refs.offlineButton.hidden = false;
+      registration.update();
+      return navigator.serviceWorker.ready;
+    })
+    .then((registration) => {
+      offlineRegistration = registration;
+      postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
+    })
     .catch(() => {});
+}
+
+async function downloadOfflineLibrary() {
+  if (refs.offlineButton.dataset.ready === 'true') {
+    showToast('The complete offline library is already downloaded');
+    return;
+  }
+  refs.offlineButton.disabled = true;
+  setOfflineButtonLabel('Preparing…');
+  try {
+    offlineRegistration = offlineRegistration || await navigator.serviceWorker.ready;
+    postOfflineMessage({ type: 'DOWNLOAD_OFFLINE_LIBRARY' });
+  } catch {
+    refs.offlineButton.disabled = false;
+    setOfflineButtonLabel('Try Offline Download');
+    showToast('Offline download could not start');
+  }
+}
+
+function postOfflineMessage(message) {
+  const worker = offlineRegistration?.active || navigator.serviceWorker.controller || offlineRegistration?.waiting;
+  if (!worker) throw new Error('Offline worker is not ready.');
+  worker.postMessage(message);
+}
+
+function handleOfflineLibraryMessage(event) {
+  const message = event.data || {};
+  if (message.type === 'OFFLINE_LIBRARY_STATUS') {
+    refs.offlineButton.disabled = false;
+    refs.offlineButton.dataset.ready = message.complete ? 'true' : 'false';
+    refs.offlineButton.setAttribute('aria-pressed', String(Boolean(message.complete)));
+    setOfflineButtonLabel(message.complete ? 'Offline Ready' : 'Download Offline');
+  }
+  if (message.type === 'OFFLINE_LIBRARY_PROGRESS') {
+    const percent = Math.max(0, Math.min(100, Number(message.percent) || 0));
+    refs.offlineButton.disabled = true;
+    refs.offlineButton.dataset.progress = String(percent);
+    refs.offlineButton.style.setProperty('--offline-progress', `${percent}%`);
+    setOfflineButtonLabel(`Downloading ${percent}%`);
+  }
+  if (message.type === 'OFFLINE_LIBRARY_COMPLETE') {
+    refs.offlineButton.disabled = false;
+    refs.offlineButton.dataset.ready = 'true';
+    refs.offlineButton.dataset.progress = '100';
+    refs.offlineButton.style.setProperty('--offline-progress', '100%');
+    refs.offlineButton.setAttribute('aria-pressed', 'true');
+    setOfflineButtonLabel('Offline Ready');
+    showToast('Full Vault downloaded — it now works without internet');
+  }
+  if (message.type === 'OFFLINE_LIBRARY_ERROR') {
+    refs.offlineButton.disabled = false;
+    setOfflineButtonLabel('Retry Offline Download');
+    showToast('The offline download paused. Tap to retry.');
+  }
+}
+
+function setOfflineButtonLabel(text) {
+  const label = refs.offlineButton.querySelector('span');
+  if (label) label.textContent = text;
 }
 
 function showToast(message) {

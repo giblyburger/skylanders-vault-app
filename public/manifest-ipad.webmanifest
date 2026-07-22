@@ -1,7 +1,7 @@
 {
   "name": "Gibly's Skylanders Vault Display",
   "short_name": "Vault Display",
-  "description": "The permanent iPad display and AirPlay controller for Gibly's complete Skylanders collection.",
+  "description": "The offline iPad library and AirPlay controller for Gibly's complete Skylanders collection.",
   "start_url": "../?display=ipad",
   "scope": "../",
   "display": "standalone",

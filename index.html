@@ -39,16 +39,23 @@
         };
       }
       try {
+        var ipadDevice = /iPad/.test(navigator.userAgent)
+          || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var ipadOs = navigator.userAgent.match(/OS (\d+)[_\.]/);
+        if (ipadDevice) document.documentElement.classList.add('ipad-device');
+        if (ipadDevice && (!ipadOs || Number(ipadOs[1]) <= 15)) {
+          document.documentElement.classList.add('legacy-ipad');
+        }
         var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
         var savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
-        if (displayRequest === 'ipad' || (displayRequest !== 'standard' && savedDisplay === 'ipad')) {
+        if (displayRequest === 'ipad' || (displayRequest !== 'standard' && (savedDisplay === 'ipad' || ipadDevice))) {
           document.documentElement.dataset.displayMode = 'ipad';
           document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=private-pairing-v1">
-    <script type="module" src="src/app.js?v=private-pairing-v1"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=offline-ipad-v1">
+    <script type="module" src="src/app.js?v=offline-ipad-v1"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -79,6 +86,7 @@
           <button class="button" type="button" data-import>Import</button>
           <button class="button button--danger" type="button" data-reset>Reset</button>
           <button class="button" type="button" data-install hidden>Install</button>
+          <button class="button offline-library-button" type="button" data-offline-library aria-pressed="false" hidden>Offline Library</button>
           <input data-import-file type="file" accept="application/json" hidden>
         </div>
       </header>

@@ -2320,6 +2320,111 @@ textarea {
   }
 }
 
+.offline-library-button {
+  --offline-progress: 0%;
+  position: relative;
+  overflow: hidden;
+}
+
+.offline-library-button::after {
+  position: absolute;
+  right: 7px;
+  bottom: 3px;
+  left: 7px;
+  height: 2px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #9a6bd8, #52b982) no-repeat;
+  background-size: var(--offline-progress) 100%;
+  content: "";
+  opacity: 0;
+}
+
+.offline-library-button[data-progress]::after {
+  opacity: 0.9;
+}
+
+.offline-library-button[data-ready="true"] {
+  border-color: rgba(82, 185, 130, 0.38);
+  color: #bdebd3;
+  background: rgba(35, 98, 72, 0.2);
+}
+
+/* Automatic low-power rendering for the iPad Mini 4 generation. */
+html.legacy-ipad *,
+html.legacy-ipad *::before,
+html.legacy-ipad *::after {
+  animation: none !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+html.legacy-ipad body::before,
+html.legacy-ipad .catalog-hero::before,
+html.legacy-ipad .catalog-hero::after,
+html.legacy-ipad .catalog-hero__gallery::after,
+html.legacy-ipad .catalog-directory::before,
+html.legacy-ipad .catalog-card__foil,
+html.legacy-ipad .hero-trading-card__foil {
+  display: none !important;
+}
+
+html.legacy-ipad .app-header,
+html.legacy-ipad .dialog-shell::backdrop,
+html.legacy-ipad .catalog-card__trading-header,
+html.legacy-ipad .catalog-grid[data-layout="photos"] .catalog-card__photo-caption,
+html.legacy-ipad .catalog-card__owned,
+html.legacy-ipad .catalog-card__quick-add {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.legacy-ipad .app-header,
+html.legacy-ipad .catalog-hero,
+html.legacy-ipad .catalog-directory,
+html.legacy-ipad .catalog-toolbar,
+html.legacy-ipad .catalog-progress article,
+html.legacy-ipad .series-card,
+html.legacy-ipad .catalog-card {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34);
+}
+
+html.legacy-ipad .catalog-card {
+  contain: layout paint style;
+}
+
+html.legacy-ipad .catalog-card__photo > img {
+  image-rendering: auto;
+}
+
+@supports (content-visibility: auto) {
+  .catalog-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 230px 345px;
+  }
+}
+
+@supports not (aspect-ratio: 2 / 3) {
+  .catalog-card__photo,
+  .catalog-grid[data-layout="photos"] .catalog-card__photo,
+  .catalog-grid[data-layout="cards"] .catalog-card__photo {
+    position: relative;
+    height: 0;
+    padding-top: 150%;
+  }
+
+  .catalog-card__photo > img,
+  .catalog-grid[data-layout="photos"] .catalog-card__photo > img,
+  .catalog-grid[data-layout="cards"] .catalog-card__photo > img {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
 /* Public catalog + private collection pairing */
 .sync-status {
   appearance: none;
@@ -5774,5 +5879,61 @@ html[data-display-mode="ipad"] .catalog-progress article::before {
   .compatibility-primer,
   .specialized-tools-panel {
     padding: 22px;
+  }
+}
+
+/* Final artwork normalization — all 640 cards retain the entire original frame. */
+.catalog-card__photo,
+.catalog-grid[data-layout="photos"] .catalog-card__photo,
+.catalog-grid[data-layout="cards"] .catalog-card__photo,
+.series-card__art {
+  aspect-ratio: 2 / 3 !important;
+}
+
+.catalog-card__photo > img,
+.catalog-grid[data-layout="photos"] .catalog-card__photo > img,
+.catalog-grid[data-layout="cards"] .catalog-card__photo > img,
+.catalog-card:hover .catalog-card__photo > img,
+.catalog-detail__photo-button img,
+.catalog-hero__gallery img,
+.catalog-hero__gallery figure img,
+.catalog-hero__gallery .hero-trading-card__art img,
+.series-card__art img,
+.series-card:hover .series-card__art img,
+.series-card.is-active .series-card__art img {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  object-fit: contain !important;
+  object-position: 50% 50% !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.catalog-detail__photo-button img {
+  height: auto !important;
+  aspect-ratio: 2 / 3 !important;
+}
+
+html.legacy-ipad .app-header,
+html.legacy-ipad .catalog-hero,
+html.legacy-ipad .catalog-directory,
+html.legacy-ipad .catalog-toolbar,
+html.legacy-ipad .catalog-progress article,
+html.legacy-ipad .series-card,
+html.legacy-ipad .catalog-card {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34) !important;
+}
+
+@supports not (aspect-ratio: 2 / 3) {
+  .catalog-card__photo > img,
+  .catalog-grid[data-layout="photos"] .catalog-card__photo > img,
+  .catalog-grid[data-layout="cards"] .catalog-card__photo > img {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 }

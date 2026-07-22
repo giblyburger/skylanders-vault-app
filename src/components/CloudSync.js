@@ -1,6 +1,7 @@
 const DEVICE_KEY = 'gibly-skylanders-device-id';
-const ACTIVE_POLL_MS = 1800;
-const BACKGROUND_POLL_MS = 10000;
+const LEGACY_IPAD = document.documentElement.classList.contains('legacy-ipad');
+const ACTIVE_POLL_MS = LEGACY_IPAD ? 6000 : 1800;
+const BACKGROUND_POLL_MS = LEGACY_IPAD ? 30000 : 10000;
 
 export function createCloudSync({ getState, normalizeState, applyState, onStatus, onPairingRequired }) {
   let revision = 0;
@@ -50,7 +51,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
           ? mergeStates(baseState, local, normalizedRemote)
           : normalizedRemote;
         baseState = clone(normalizedRemote);
-        applyState(merged);
+        if (!same(local, merged)) applyState(merged);
         dirty = !same(merged, normalizedRemote);
         if (dirty) await save();
       } else {
@@ -76,7 +77,11 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       onStatus({ state: 'locked', text: 'Pair device' });
       return;
     }
-    onStatus({ state: navigator.onLine ? 'syncing' : 'offline', text: navigator.onLine ? 'Syncing' : 'Saved offline' });
+    if (!navigator.onLine) {
+      onStatus({ state: 'offline', text: 'Saved offline' });
+      return;
+    }
+    onStatus({ state: 'syncing', text: 'Syncing' });
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 260);
   }
@@ -114,7 +119,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       }
     } finally {
       saving = false;
-      if (dirty && !locked) {
+      if (dirty && !locked && navigator.onLine) {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(save, 900);
       }
@@ -158,7 +163,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
 
   function schedulePoll() {
     clearTimeout(pollTimer);
-    if (locked) return;
+    if (locked || !navigator.onLine) return;
     pollTimer = setTimeout(poll, document.hidden ? BACKGROUND_POLL_MS : ACTIVE_POLL_MS);
   }
 
@@ -229,7 +234,11 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
     save();
     poll();
   });
-  window.addEventListener('offline', () => onStatus({ state: 'offline', text: 'Saved offline' }));
+  window.addEventListener('offline', () => {
+    clearTimeout(saveTimer);
+    clearTimeout(pollTimer);
+    onStatus({ state: 'offline', text: 'Saved offline' });
+  });
 
   return { start, pair, queue, save, reset, uploadPhoto, deletePhoto, getRevision: () => revision };
 }

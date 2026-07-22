@@ -28,11 +28,22 @@ const UNRELEASED_CARD_IDS = new Set([
   'catalog-11513673',
   'catalog-58496'
 ]);
+const LEGACY_IPAD = document.documentElement.classList.contains('legacy-ipad');
 
 export function createMasterCatalog(container, dialog, catalog, callbacks) {
   const cardsById = new Map(catalog.cards.map((card) => [card.id, card]));
   const collectibleCards = catalog.cards.filter(isCollectibleCard);
-  const pageSize = /iPad/i.test(navigator.userAgent) || document.documentElement.dataset.displayMode === 'ipad' ? 36 : 72;
+  const ipadDevice = /iPad/i.test(navigator.userAgent) || document.documentElement.dataset.displayMode === 'ipad';
+  const pageSize = LEGACY_IPAD ? 12 : ipadDevice ? 24 : 72;
+  const cardNumberById = new Map(collectibleCards.map((card, index) => [card.id, index + 1]));
+  const searchIndexById = new Map(collectibleCards.map((card) => {
+    const displayName = normalizeText(card.name);
+    const relatedNames = [card.canonicalName, card.baseName].filter(Boolean).map(normalizeText);
+    const aliases = (card.scl?.aliases || []).map(normalizeText);
+    const identityText = normalizeText((card.scanIdentities || []).map((identity) => `${identity.name} ${identity.charId} ${identity.variantId}`).join(' '));
+    const supportingText = normalizeText(`${card.id} ${card.category} ${card.element} ${card.edition} ${card.role} ${identityText}`);
+    return [card.id, { displayName, relatedNames, aliases, supportingText }];
+  }));
   const referenceCount = catalog.cards.length - collectibleCards.length + (catalog.scanCatalog || catalog.unmappedScanIdentities || []).filter((identity) => ['technical-only', 'in-game/digital'].includes(identity.releaseStatus)).length;
   const state = {
     search: '',
@@ -82,7 +93,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const games = unique(collectibleCards.map((card) => card.game).filter((game) => game && game !== 'Unknown'));
     const categories = unique(collectibleCards.map((card) => card.category));
     const elements = unique(collectibleCards.map((card) => card.element).filter((element) => element && element !== 'None'));
-    const featureNames = ['Spyro', 'Tree Rex', 'Wash Buckler', 'Snap Shot', 'Spitfire'];
+    const featureNames = ['Spyro', 'Tree Rex', 'Wash Buckler', 'Snap Shot', 'Spitfire'].slice(0, LEGACY_IPAD ? 3 : 5);
     const featured = featureNames.map((name) => collectibleCards.find((card) => card.name === name)).filter(Boolean);
     container.innerHTML = `
       <header class="catalog-hero">
@@ -107,7 +118,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         <div class="catalog-hero__gallery" aria-label="Featured collection pieces">
           ${featured.map((card, index) => `<figure style="--hero-index:${index};--card-el:${elementColor(card.element)}">
             <span class="hero-trading-card__header"><span><small>${escapeHtml(card.game)}</small><strong>${escapeHtml(card.name)}</strong></span><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
-            <span class="hero-trading-card__art"><img src="${escapeHtml(cardArtworkUrl(card))}" alt="${escapeHtml(card.name)} collector card"></span>
+            <span class="hero-trading-card__art"><img src="${escapeHtml(wallArtworkUrl(card))}" width="${LEGACY_IPAD ? 384 : 512}" height="${LEGACY_IPAD ? 576 : 768}" alt="${escapeHtml(card.name)} collector card"></span>
             <figcaption><span>${escapeHtml(card.element !== 'None' ? card.element : card.category)} · ${escapeHtml(card.category)}</span><strong>${escapeHtml(card.releaseYear || '')}</strong></figcaption>
             <span class="hero-trading-card__foil" aria-hidden="true"></span>
           </figure>`).join('')}
@@ -320,11 +331,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
     const query = normalizeText(state.search);
     let filtered = records.map(({ card, record }) => {
-      const displayName = normalizeText(card.name);
-      const relatedNames = [card.canonicalName, card.baseName].filter(Boolean).map(normalizeText);
-      const aliases = (card.scl?.aliases || []).map(normalizeText);
-      const identityText = normalizeText(card.scanIdentities.map((identity) => `${identity.name} ${identity.charId} ${identity.variantId}`).join(' '));
-      const supportingText = normalizeText(`${card.id} ${card.category} ${card.element} ${card.edition} ${card.role} ${identityText}`);
+      const searchIndex = searchIndexById.get(card.id);
+      const { displayName, relatedNames, aliases, supportingText } = searchIndex;
       let searchRank = 0;
       if (query) {
         if (displayName === query) searchRank = 0;
@@ -400,7 +408,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           const feature = collectibleCards.find((card) => card.name === line.feature && card.game === line.name) || gameRecords[0]?.card;
           const percent = gameRecords.length ? Math.round((owned / gameRecords.length) * 100) : 0;
           return `<button class="series-card${state.game === line.name ? ' is-active' : ''}" type="button" data-directory-game="${escapeHtml(line.name)}" aria-pressed="${state.game === line.name}" style="--series-accent:${line.accent};--series-progress:${percent}%;--series-index:${index}">
-            <span class="series-card__art">${feature ? `<img src="${escapeHtml(cardArtworkUrl(feature))}" alt="" loading="lazy">` : ''}</span>
+            <span class="series-card__art">${feature ? `<img src="${escapeHtml(wallArtworkUrl(feature))}" width="${LEGACY_IPAD ? 384 : 512}" height="${LEGACY_IPAD ? 576 : 768}" alt="" loading="lazy" decoding="async">` : ''}</span>
             <span class="series-card__copy"><small>${line.number} · ${line.year}</small><strong>${escapeHtml(line.name)}</strong><span>${gameRecords.length} obtainable pieces</span><i><b></b></i><em>${owned} collected</em></span>
           </button>`;
         }).join('')}
@@ -440,16 +448,16 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const identity = card.scanIdentities[0];
     const compatibilityGames = Object.entries(card.compatibility || {}).filter(([, value]) => String(value).startsWith('yes')).map(([game]) => GAME_SHORT[game] || game);
     const verification = verificationLabel(card.verification?.status);
-    const cardArt = cardArtworkUrl(card);
+    const cardArt = wallArtworkUrl(card);
     const identityLine = [card.releaseYear, identity?.charId ? `ID ${identity.charId}` : '', identity?.variantId ? `VARIANT ${identity.variantId}` : ''].filter(Boolean).join(' · ');
     const seriesLine = [card.element !== 'None' ? card.element : '', card.scl?.series || card.role, card.edition && card.edition !== 'Standard' ? card.edition : ''].filter(Boolean).join(' · ') || 'Source-backed catalog record';
     const releaseLine = [card.releaseYear, card.game || 'Reference'].filter(Boolean).join(' · ');
     const scanLine = identity ? `${identity.charId} · ${identity.variantId}` : 'No exact NFC identity';
     const worksWithLine = compatibilityGames.length ? compatibilityGames.join(' · ') : 'Not applicable';
-    const cardNumber = collectibleCards.indexOf(card) + 1;
+    const cardNumber = cardNumberById.get(card.id) || 0;
     return `<article class="catalog-card" data-owned="${owned > 0}" style="--card-el:${elementColor(card.element)}">
       <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
-        <img class="catalog-card__art" loading="lazy" decoding="async" src="${escapeHtml(cardArt)}" alt="Original collector-card artwork of ${escapeHtml(card.name)}" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
+        <img class="catalog-card__art" loading="lazy" decoding="async" width="${LEGACY_IPAD ? 384 : 512}" height="${LEGACY_IPAD ? 576 : 768}" src="${escapeHtml(cardArt)}" alt="Original collector-card artwork of ${escapeHtml(card.name)}" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
         <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
         <span class="catalog-card__trading-header"><span><small>${escapeHtml(card.game || 'Vault archive')}</small><strong>${escapeHtml(card.name)}</strong></span><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
         <span class="catalog-card__foil" aria-hidden="true"></span>
@@ -959,6 +967,12 @@ function fact(label, value) {
 
 function cardArtworkUrl(card) {
   return `assets/card-art/cards/${encodeURIComponent(card.id)}.webp`;
+}
+
+function wallArtworkUrl(card) {
+  return LEGACY_IPAD
+    ? `assets/card-art/thumbs/${encodeURIComponent(card.id)}.webp`
+    : cardArtworkUrl(card);
 }
 
 function photoButton(src, alt, label) {
