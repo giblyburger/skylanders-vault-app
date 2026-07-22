@@ -2,12 +2,13 @@ const DEVICE_KEY = 'gibly-skylanders-device-id';
 const ACTIVE_POLL_MS = 1800;
 const BACKGROUND_POLL_MS = 10000;
 
-export function createCloudSync({ getState, normalizeState, applyState, onStatus }) {
+export function createCloudSync({ getState, normalizeState, applyState, onStatus, onPairingRequired }) {
   let revision = 0;
   let baseState = clone(getState());
   let dirty = false;
   let saving = false;
   let started = false;
+  let locked = false;
   let saveTimer = null;
   let pollTimer = null;
   const clientId = getDeviceId();
@@ -24,6 +25,10 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       const error = new Error(payload.error || 'Cloud request failed.');
       error.status = response.status;
       error.payload = payload;
+      if (response.status === 401 && path !== '/api/pair') {
+        locked = true;
+        onPairingRequired?.();
+      }
       throw error;
     }
     return payload;
@@ -32,6 +37,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
   async function start() {
     if (started) return;
     started = true;
+    locked = false;
     onStatus({ state: 'connecting', text: 'Connecting' });
     try {
       const remote = await request('/api/state');
@@ -53,21 +59,30 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       }
       onStatus({ state: 'synced', text: 'Synced' });
     } catch (error) {
-      onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Sync unavailable' : 'Offline' });
+      if (error.status === 401) {
+        locked = true;
+        onStatus({ state: 'locked', text: 'Pair device' });
+      } else {
+        onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Sync unavailable' : 'Offline' });
+      }
     } finally {
-      schedulePoll();
+      if (!locked) schedulePoll();
     }
   }
 
   function queue() {
     dirty = true;
+    if (locked) {
+      onStatus({ state: 'locked', text: 'Pair device' });
+      return;
+    }
     onStatus({ state: navigator.onLine ? 'syncing' : 'offline', text: navigator.onLine ? 'Syncing' : 'Saved offline' });
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 260);
   }
 
   async function save() {
-    if (!dirty || saving) return;
+    if (!dirty || saving || locked) return;
     saving = true;
     dirty = false;
     const local = normalizeState(getState());
@@ -89,13 +104,17 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
         baseState = clone(remote);
         applyState(merged);
         dirty = true;
+      } else if (error.status === 401) {
+        locked = true;
+        dirty = true;
+        onStatus({ state: 'locked', text: 'Pair device' });
       } else {
         dirty = true;
         onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Retrying sync' : 'Saved offline' });
       }
     } finally {
       saving = false;
-      if (dirty) {
+      if (dirty && !locked) {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(save, 900);
       }
@@ -125,15 +144,21 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       } else if (!dirty && !saving) {
         onStatus({ state: 'synced', text: 'Synced' });
       }
-    } catch {
-      onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Retrying sync' : 'Offline' });
+    } catch (error) {
+      if (error.status === 401) {
+        locked = true;
+        onStatus({ state: 'locked', text: 'Pair device' });
+      } else {
+        onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Retrying sync' : 'Offline' });
+      }
     } finally {
-      schedulePoll();
+      if (!locked) schedulePoll();
     }
   }
 
   function schedulePoll() {
     clearTimeout(pollTimer);
+    if (locked) return;
     pollTimer = setTimeout(poll, document.hidden ? BACKGROUND_POLL_MS : ACTIVE_POLL_MS);
   }
 
@@ -171,11 +196,42 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
     await save();
   }
 
+  async function pair(code) {
+    clearTimeout(pollTimer);
+    clearTimeout(saveTimer);
+    onStatus({ state: 'connecting', text: 'Pairing' });
+    try {
+      await request('/api/pair', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+    } catch (error) {
+      locked = true;
+      onStatus({ state: 'locked', text: 'Pair device' });
+      throw error;
+    }
+    revision = 0;
+    locked = false;
+    started = false;
+    await start();
+    return true;
+  }
+
   document.addEventListener('visibilitychange', schedulePoll);
-  window.addEventListener('online', () => { onStatus({ state: 'connecting', text: 'Reconnecting' }); save(); poll(); });
+  window.addEventListener('online', () => {
+    if (locked) {
+      onStatus({ state: 'locked', text: 'Pair device' });
+      onPairingRequired?.();
+      return;
+    }
+    onStatus({ state: 'connecting', text: 'Reconnecting' });
+    save();
+    poll();
+  });
   window.addEventListener('offline', () => onStatus({ state: 'offline', text: 'Saved offline' }));
 
-  return { start, queue, save, reset, uploadPhoto, deletePhoto, getRevision: () => revision };
+  return { start, pair, queue, save, reset, uploadPhoto, deletePhoto, getRevision: () => revision };
 }
 
 function mergeStates(base, local, remote) {

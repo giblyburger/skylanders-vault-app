@@ -20,6 +20,8 @@ const PHOTO_OWNER_INDEX = 'CREATE INDEX IF NOT EXISTS vault_photos_owner_idx ON 
 const MAX_STATE_BYTES = 5 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
+const SESSION_COOKIE = 'gibly_vault_session';
+const SESSION_MAX_AGE = 365 * 24 * 60 * 60;
 
 export default {
   async fetch(request, env) {
@@ -27,8 +29,9 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
 
     try {
-      const ownerEmail = authenticatedEmail(request, url);
-      if (!ownerEmail) return json({ error: 'Sign in with ChatGPT to sync your vault.' }, 401);
+      if (url.pathname === '/api/pair') return handlePairing(request, env, url);
+      const ownerEmail = await authenticatedEmail(request, url, env);
+      if (!ownerEmail) return json({ error: 'Pair this device to sync your private vault.' }, 401);
       if (!env.DB) return json({ error: 'Cloud sync is not configured yet.' }, 503);
 
       await ensureSchema(env.DB);
@@ -42,11 +45,87 @@ export default {
   }
 };
 
-function authenticatedEmail(request, url) {
+async function authenticatedEmail(request, url, env) {
   const forwarded = request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase();
-  if (forwarded) return forwarded;
+  const owner = String(env.VAULT_OWNER_EMAIL || '').trim().toLowerCase();
+  if (forwarded && (!owner || forwarded === owner)) return forwarded;
   if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return 'local-preview@skylanders.app';
+  if (await hasValidPairingCookie(request, env)) return owner;
   return '';
+}
+
+async function handlePairing(request, env, url) {
+  if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) {
+    return json({ error: 'Device pairing is not configured yet.' }, 503);
+  }
+
+  if (request.method === 'GET') {
+    return json({ paired: Boolean(await authenticatedEmail(request, url, env)) });
+  }
+
+  if (request.method === 'DELETE') {
+    return json({ paired: false }, 200, {
+      'set-cookie': `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${url.protocol === 'https:' ? '; Secure' : ''}`
+    });
+  }
+
+  if (request.method !== 'POST') return methodNotAllowed(['GET', 'POST', 'DELETE']);
+  const bodyText = await request.text();
+  if (bodyText.length > 2048) return json({ error: 'Pairing request is too large.' }, 413);
+  let body;
+  try { body = JSON.parse(bodyText); } catch { return json({ error: 'Enter the pairing code shown by the Vault owner.' }, 400); }
+  if (!await secureCodeMatch(body?.code, env.VAULT_PAIRING_CODE)) {
+    return json({ error: 'That pairing code is not correct.' }, 401);
+  }
+
+  const token = await pairingSessionToken(env.VAULT_PAIRING_CODE);
+  return json({ paired: true }, 200, {
+    'set-cookie': `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE}${url.protocol === 'https:' ? '; Secure' : ''}`
+  });
+}
+
+async function hasValidPairingCookie(request, env) {
+  if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) return false;
+  const cookies = parseCookies(request.headers.get('cookie') || '');
+  const supplied = cookies.get(SESSION_COOKIE) || '';
+  if (!supplied) return false;
+  const expected = await pairingSessionToken(env.VAULT_PAIRING_CODE);
+  return timingSafeEqual(supplied, expected);
+}
+
+async function secureCodeMatch(supplied, expected) {
+  const suppliedHash = await sha256(normalizePairingCode(supplied));
+  const expectedHash = await sha256(normalizePairingCode(expected));
+  return timingSafeEqual(suppliedHash, expectedHash);
+}
+
+async function pairingSessionToken(secret) {
+  return sha256(`gibly-vault-session-v1:${normalizePairingCode(secret)}`);
+}
+
+function normalizePairingCode(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function parseCookies(header) {
+  const cookies = new Map();
+  header.split(';').forEach((part) => {
+    const separator = part.indexOf('=');
+    if (separator < 1) return;
+    cookies.set(part.slice(0, separator).trim(), part.slice(separator + 1).trim());
+  });
+  return cookies;
+}
+
+function timingSafeEqual(left, right) {
+  const a = String(left || '');
+  const b = String(right || '');
+  let difference = a.length ^ b.length;
+  const length = Math.max(a.length, b.length);
+  for (let index = 0; index < length; index += 1) {
+    difference |= (a.charCodeAt(index % Math.max(1, a.length)) || 0) ^ (b.charCodeAt(index % Math.max(1, b.length)) || 0);
+  }
+  return difference === 0;
 }
 
 async function ensureSchema(db) {
@@ -209,9 +288,11 @@ function methodNotAllowed(methods) {
   });
 }
 
-function json(value, status = 200) {
+function json(value, status = 200, extraHeaders = {}) {
+  const headers = new Headers({ 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+  Object.entries(extraHeaders).forEach(([key, value]) => headers.set(key, value));
   return new Response(JSON.stringify(value), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
+    headers
   });
 }

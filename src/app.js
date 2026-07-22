@@ -2,8 +2,8 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=full-series-legacy-v1';
-import { createCloudSync } from './components/CloudSync.js?v=cloud-nfc-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=private-pairing-v1';
+import { createCloudSync } from './components/CloudSync.js?v=private-pairing-v1';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -73,6 +73,12 @@ const refs = {
   resetButton: document.querySelector('[data-reset]'),
   displayModeButton: document.querySelector('[data-display-mode]'),
   installButton: document.querySelector('[data-install]'),
+  pairingDialog: document.querySelector('[data-pairing-dialog]'),
+  pairingForm: document.querySelector('[data-pairing-form]'),
+  pairingCode: document.querySelector('[data-pairing-code]'),
+  pairingError: document.querySelector('[data-pairing-error]'),
+  pairingSubmit: document.querySelector('[data-pairing-submit]'),
+  pairingSkip: Array.from(document.querySelectorAll('[data-pairing-skip]')),
   trapDialog: document.querySelector('[data-trap-dialog]'),
   catalogRoot: document.querySelector('[data-master-catalog]'),
   catalogDialog: document.querySelector('[data-catalog-dialog]'),
@@ -134,7 +140,8 @@ async function init() {
         persistState({ cloud: false });
         renderAll();
       },
-      onStatus: updateSyncStatus
+      onStatus: updateSyncStatus,
+      onPairingRequired: openPairingDialog
     });
     app.cloudSync.start();
     registerServiceWorker();
@@ -234,6 +241,7 @@ function updateSyncStatus(status) {
   refs.syncStatus.dataset.state = status.state || 'connecting';
   const label = refs.syncStatus.querySelector('span');
   if (label) label.textContent = status.text || 'Connecting';
+  refs.syncStatus.setAttribute('aria-label', 'Collection sync status: ' + (status.text || 'Connecting'));
 }
 
 function populateFilters() {
@@ -293,9 +301,79 @@ function wireEvents() {
   refs.importFile.addEventListener('change', importBackup);
   refs.resetButton.addEventListener('click', resetProgress);
   refs.displayModeButton.addEventListener('click', toggleDisplayMode);
+  refs.syncStatus?.addEventListener('click', () => {
+    if (refs.syncStatus.dataset.state === 'locked') openPairingDialog();
+  });
+  refs.pairingCode?.addEventListener('input', () => {
+    const compact = refs.pairingCode.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+    refs.pairingCode.value = compact.match(/.{1,4}/g)?.join('-') || '';
+    showPairingError('');
+  });
+  refs.pairingForm?.addEventListener('submit', pairCurrentDevice);
+  refs.pairingSkip.forEach((button) => button.addEventListener('click', closePairingDialog));
+  refs.pairingDialog?.addEventListener('close', clearPairingFallback);
   window.addEventListener('hashchange', openNfcDeepLink);
   setupBoardTilt();
   setupInstallPrompt();
+}
+
+async function pairCurrentDevice(event) {
+  event.preventDefault();
+  const code = refs.pairingCode?.value.trim() || '';
+  if (!code) {
+    showPairingError('Enter your private pairing code.');
+    refs.pairingCode?.focus();
+    return;
+  }
+
+  refs.pairingSubmit.disabled = true;
+  refs.pairingSubmit.textContent = 'Pairing…';
+  showPairingError('');
+  try {
+    await app.cloudSync.pair(code);
+    closePairingDialog();
+    refs.pairingCode.value = '';
+    showToast('Paired — your private collection is syncing');
+  } catch (error) {
+    showPairingError(error.message || 'This device could not be paired.');
+    refs.pairingCode?.select();
+  } finally {
+    refs.pairingSubmit.disabled = false;
+    refs.pairingSubmit.textContent = 'Pair & sync';
+  }
+}
+
+function openPairingDialog() {
+  const dialog = refs.pairingDialog;
+  if (!dialog || dialog.hasAttribute('open')) return;
+  showPairingError('');
+  if (typeof dialog.showModal === 'function') {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute('open', '');
+    dialog.classList.add('dialog-shell--fallback');
+    document.body.classList.add('dialog-fallback-active');
+  }
+  setTimeout(() => refs.pairingCode?.focus(), 40);
+}
+
+function closePairingDialog() {
+  const dialog = refs.pairingDialog;
+  if (!dialog) return;
+  if (typeof dialog.close === 'function' && dialog.hasAttribute('open')) dialog.close();
+  else dialog.removeAttribute('open');
+  clearPairingFallback();
+}
+
+function clearPairingFallback() {
+  refs.pairingDialog?.classList.remove('dialog-shell--fallback');
+  document.body.classList.remove('dialog-fallback-active');
+}
+
+function showPairingError(message) {
+  if (!refs.pairingError) return;
+  refs.pairingError.textContent = message;
+  refs.pairingError.hidden = !message;
 }
 
 function applyInitialDisplayMode() {
@@ -693,7 +771,7 @@ function setupInstallPrompt() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  navigator.serviceWorker.register('sw.js?v=full-series-legacy-v1', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=private-pairing-v1', { updateViaCache: 'none' })
     .then((registration) => registration.update())
     .catch(() => {});
 }

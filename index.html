@@ -47,8 +47,8 @@
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=full-series-legacy-v1">
-    <script type="module" src="src/app.js?v=full-series-legacy-v1"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=private-pairing-v1">
+    <script type="module" src="src/app.js?v=private-pairing-v1"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -73,7 +73,7 @@
         </div>
 
         <div class="header-actions" aria-label="Backup and app actions">
-          <span class="sync-status" data-sync-status data-state="connecting" role="status" aria-live="polite"><i></i><span>Connecting</span></span>
+          <button class="sync-status" data-sync-status data-state="connecting" type="button" aria-label="Collection sync status: Connecting"><i></i><span>Connecting</span></button>
           <button class="button display-mode-button" type="button" data-display-mode aria-pressed="false">iPad Display</button>
           <button class="button button--primary" type="button" data-export>Export</button>
           <button class="button" type="button" data-import>Import</button>
@@ -187,6 +187,25 @@
       </main>
     </div>
 
+    <dialog class="dialog-shell pairing-dialog" data-pairing-dialog aria-labelledby="pairing-title">
+      <form class="pairing-card" data-pairing-form>
+        <button class="pairing-card__close" data-pairing-skip type="button" aria-label="Browse without syncing">&times;</button>
+        <div class="pairing-card__signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="eyebrow">Private collection</p>
+        <h2 id="pairing-title">Pair this device</h2>
+        <p class="pairing-card__intro">The complete catalog is ready to browse. Enter your private code once to unlock your collection progress, personal photos, and instant syncing on this device.</p>
+        <label class="pairing-code-field">
+          <span>Pairing code</span>
+          <input data-pairing-code type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="XXXX-XXXX-XXXX">
+        </label>
+        <p class="pairing-card__error" data-pairing-error role="alert" aria-live="polite" hidden></p>
+        <div class="pairing-card__actions">
+          <button class="button button--primary" data-pairing-submit type="submit">Pair &amp; sync</button>
+          <button class="button" data-pairing-skip type="button">Browse without syncing</button>
+        </div>
+        <small>Your private collection and photos stay locked until the correct code is entered.</small>
+      </form>
+    </dialog>
     <dialog class="dialog-shell" data-trap-dialog></dialog>
     <dialog class="dialog-shell catalog-dialog" data-catalog-dialog></dialog>
     <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
