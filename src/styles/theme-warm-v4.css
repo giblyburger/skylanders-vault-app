@@ -250,6 +250,182 @@ a:focus-visible {
     background:
       radial-gradient(circle at 20% -4%, rgba(143, 57, 89, 0.22), transparent 24rem),
       radial-gradient(circle at 92% 7%, rgba(205, 151, 58, 0.12), transparent 22rem),
-      #050304;
+    #050304;
+  }
+}
+
+.series-nav__label-short {
+  display: none;
+}
+
+/* Big-screen edition: roomy cards and legible controls for a television browser. */
+html[data-display-mode="tv"] {
+  color-scheme: dark;
+  background: #030203;
+  font-size: 18px;
+}
+
+html[data-display-mode="tv"] body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(143, 57, 89, 0.2), transparent 38rem),
+    radial-gradient(circle at 90% 8%, rgba(208, 151, 59, 0.12), transparent 36rem),
+    #030203;
+}
+
+html[data-display-mode="tv"] .app-shell {
+  width: min(calc(100% - 48px), 1900px);
+  padding-top: 18px;
+  padding-bottom: 56px;
+}
+
+html[data-display-mode="tv"] .app-header {
+  position: sticky;
+  top: 14px;
+  z-index: 90;
+  grid-template-columns: minmax(310px, 1fr) minmax(260px, 420px) auto;
+  min-height: 92px;
+  padding: 16px 20px;
+  border-radius: 24px;
+}
+
+html[data-display-mode="tv"] .brand-mark {
+  width: 58px;
+  height: 58px;
+}
+
+html[data-display-mode="tv"] .app-header h1 {
+  font-size: 1.55rem;
+}
+
+html[data-display-mode="tv"] .header-actions [data-export],
+html[data-display-mode="tv"] .header-actions [data-import],
+html[data-display-mode="tv"] .header-actions [data-reset],
+html[data-display-mode="tv"] .header-actions [data-install],
+html[data-display-mode="tv"] .header-actions [data-offline-library] {
+  display: none;
+}
+
+html[data-display-mode="tv"] .display-mode-button,
+html[data-display-mode="tv"] .view-tab,
+html[data-display-mode="tv"] .catalog-toolbar input,
+html[data-display-mode="tv"] .catalog-toolbar select,
+html[data-display-mode="tv"] .catalog-results-tools .button {
+  min-height: 52px;
+  font-size: 0.86rem;
+}
+
+html[data-display-mode="tv"] .catalog-hero {
+  min-height: 570px;
+  margin-top: 18px;
+  padding: clamp(42px, 5vw, 82px);
+  border-radius: 32px;
+}
+
+html[data-display-mode="tv"] .catalog-hero h2 {
+  font-size: clamp(4.4rem, 6vw, 7.4rem);
+}
+
+html[data-display-mode="tv"] .catalog-hero__copy > p:not(.eyebrow) {
+  max-width: 680px;
+  font-size: 1.14rem;
+  line-height: 1.7;
+}
+
+html[data-display-mode="tv"] .catalog-directory {
+  padding: 30px;
+  border-radius: 28px;
+}
+
+html[data-display-mode="tv"] .catalog-directory__games {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+
+html[data-display-mode="tv"] .series-card {
+  min-height: 190px;
+}
+
+html[data-display-mode="tv"] .catalog-grid[data-layout="cards"] {
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  gap: 24px;
+}
+
+html[data-display-mode="tv"] .catalog-grid[data-layout="photos"] {
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 22px;
+}
+
+html[data-display-mode="tv"] .catalog-card {
+  font-size: 1rem;
+}
+
+html[data-display-mode="tv"] .catalog-card__actions .button {
+  min-height: 46px;
+}
+
+html[data-display-mode="tv"] .display-mode-button.is-active {
+  border-color: rgba(230, 189, 108, 0.5);
+  background: linear-gradient(135deg, #b48134, #74402d 48%, #55233a);
+  color: #fff8ea;
+}
+
+@media (max-width: 1100px) {
+  html[data-display-mode="tv"] {
+    font-size: 16px;
+  }
+
+  html[data-display-mode="tv"] .app-shell {
+    width: min(calc(100% - 24px), 1900px);
+  }
+
+  html[data-display-mode="tv"] .catalog-directory__games {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* A calm three-destination phone dock. Game filters live in the full game browser. */
+@media (max-width: 620px) {
+  .series-navigation {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+  }
+
+  .series-navigation .series-nav__game:not(.series-nav__home) {
+    display: none;
+  }
+
+  .series-navigation .view-tab {
+    width: 100%;
+    min-height: 48px;
+    padding: 9px 8px;
+    border-radius: 13px;
+    font-size: 0.76rem;
+    font-weight: 760;
+    letter-spacing: 0.015em;
+  }
+
+  .series-navigation .series-nav__guide {
+    margin-left: 0;
+    border-left: 0;
+    border-radius: 13px;
+  }
+
+  .series-navigation .series-nav__home.is-active,
+  .series-navigation .series-nav__guide.is-active {
+    border-color: rgba(239, 202, 126, 0.48);
+    background: linear-gradient(135deg, #a87331, #713928 48%, #512036);
+    box-shadow: 0 8px 22px rgba(76, 29, 45, 0.3), inset 0 1px rgba(255, 248, 230, 0.12);
+    color: #fff8ea;
+  }
+
+  .series-nav__label-full {
+    display: none;
+  }
+
+  .series-nav__label-short {
+    display: inline;
   }
 }

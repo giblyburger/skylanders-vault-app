@@ -48,8 +48,14 @@
         }
         var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
         var savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
-        if (displayRequest === 'ipad' || (displayRequest !== 'standard' && (savedDisplay === 'ipad' || ipadDevice))) {
-          document.documentElement.dataset.displayMode = 'ipad';
+        var requestedDisplay = displayRequest === 'tv' || displayRequest === 'ipad' || displayRequest === 'standard'
+          ? displayRequest
+          : '';
+        var preferredDisplay = requestedDisplay || savedDisplay || (ipadDevice ? 'ipad' : 'standard');
+        if (preferredDisplay === 'tv' || preferredDisplay === 'ipad') {
+          document.documentElement.dataset.displayMode = preferredDisplay;
+        }
+        if (preferredDisplay === 'ipad') {
           document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
         }
       } catch (error) {}
@@ -58,8 +64,8 @@
     <link rel="stylesheet" href="src/styles/card-v2.css?v=vault-v2">
     <link rel="stylesheet" href="src/styles/card-v3.css?v=vault-v3">
     <link rel="stylesheet" href="src/styles/feature-suite.css?v=vault-v2">
-    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=warm-v4">
-    <script type="module" src="src/app.js?v=warm-v4"></script>
+    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=display-v6">
+    <script type="module" src="src/app.js?v=display-v6"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -85,7 +91,7 @@
 
         <div class="header-actions" aria-label="Backup and app actions">
           <button class="sync-status" data-sync-status data-state="connecting" type="button" aria-label="Collection sync status: Connecting"><i></i><span>Connecting</span></button>
-          <button class="button display-mode-button" type="button" data-display-mode aria-pressed="false">iPad Display</button>
+          <button class="button display-mode-button" type="button" data-display-mode-button aria-pressed="false" title="Tap to switch display mode">Display</button>
           <button class="button button--primary" type="button" data-export>Export</button>
           <button class="button" type="button" data-import>Import</button>
           <button class="button button--danger" type="button" data-reset>Reset</button>
@@ -123,15 +129,15 @@
       <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
 
       <nav class="view-tabs series-navigation" aria-label="Browse every Skylanders game">
-        <button class="view-tab series-nav__game is-active" type="button" data-game-nav="" aria-pressed="true">All Games</button>
+        <button class="view-tab series-nav__game series-nav__home is-active" type="button" data-game-nav="" aria-pressed="true" aria-label="Open the complete Vault"><span class="series-nav__label-full">All Games</span><span class="series-nav__label-short" aria-hidden="true">Vault</span></button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Spyro's Adventure" aria-pressed="false" style="--series-nav-accent:#8f65d8">Spyro’s Adventure</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Giants" aria-pressed="false" style="--series-nav-accent:#ef573f">Giants</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="SWAP Force" aria-pressed="false" style="--series-nav-accent:#b06a46">SWAP Force</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Trap Team" aria-pressed="false" style="--series-nav-accent:#a76b83">Trap Team</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="SuperChargers" aria-pressed="false" style="--series-nav-accent:#e6a13a">SuperChargers</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Imaginators" aria-pressed="false" style="--series-nav-accent:#60bf58">Imaginators</button>
-        <button class="view-tab series-nav__guide" type="button" data-view-tab="reference" aria-selected="false">Series Guide</button>
-        <button class="view-tab series-nav__guide" type="button" data-view-tab="tools" aria-selected="false">Vault Tools</button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="reference" aria-selected="false" aria-label="Open the Series Guide"><span class="series-nav__label-full">Series Guide</span><span class="series-nav__label-short" aria-hidden="true">Guide</span></button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="tools" aria-selected="false" aria-label="Open Vault Tools"><span class="series-nav__label-full">Vault Tools</span><span class="series-nav__label-short" aria-hidden="true">Tools</span></button>
       </nav>
 
       <main>

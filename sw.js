@@ -1,4 +1,4 @@
-const CORE_CACHE_NAME = 'gibly-core-vault-v4';
+const CORE_CACHE_NAME = 'gibly-core-display-v6';
 const LIBRARY_CACHE_NAME = 'gibly-offline-library-v4';
 const LIBRARY_REVISION = 'complete-card-library-2026-07-25-v4';
 const LIBRARY_STATUS_URL = './offline-library-status.json';
@@ -15,7 +15,7 @@ const CORE_ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './public/manifest-ipad.webmanifest',
-  './src/app.js?v=warm-v4',
+  './src/app.js?v=display-v6',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
@@ -29,7 +29,7 @@ const CORE_ASSETS = [
   './src/styles/card-v2.css?v=vault-v2',
   './src/styles/card-v3.css?v=vault-v3',
   './src/styles/feature-suite.css?v=vault-v2',
-  './src/styles/theme-warm-v4.css?v=warm-v4',
+  './src/styles/theme-warm-v4.css?v=display-v6',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
