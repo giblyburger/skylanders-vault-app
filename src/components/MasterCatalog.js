@@ -1226,9 +1226,9 @@ function formatCompactDate(value) {
 
 function elementColor(element) {
   return {
-    Magic: '#8f65d8', Water: '#269ee8', Tech: '#e6a13a', Fire: '#ef573f', Air: '#79d8e7',
-    Earth: '#a87a45', Undead: '#9b7bc8', Life: '#60bf58', Dark: '#6b5a9f', Light: '#f1d45d', Kaos: '#c553db', None: '#1787b9'
-  }[element] || '#1787b9';
+    Magic: '#9b63c7', Water: '#a76b83', Tech: '#d29a3d', Fire: '#db573d', Air: '#d7bd74',
+    Earth: '#a36b3f', Undead: '#8e697d', Life: '#6f9e58', Dark: '#67405f', Light: '#e6c967', Kaos: '#bd4e87', None: '#9e7652'
+  }[element] || '#9e7652';
 }
 
 function emptyMarkup() {

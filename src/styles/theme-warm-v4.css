@@ -1,0 +1,255 @@
+/*
+ * Warm Vault palette
+ * Obsidian, plum, crimson, copper and antique gold replace the prior blue UI.
+ */
+
+:root {
+  --canvas: #050304;
+  --canvas-deep: #020102;
+  --paper: #0c0709;
+  --paper-muted: #140c10;
+  --ink: #f8f1e5;
+  --muted: #ae9da0;
+  --line: rgba(238, 207, 150, 0.13);
+  --line-strong: rgba(225, 180, 92, 0.5);
+  --navy: #f8f1e5;
+  --navy-deep: #080405;
+  --navy-soft: #171013;
+  --blue: #d4a647;
+  --blue-dark: #f0cf78;
+  --gold: #e5b95d;
+  --green: #78b77b;
+  --red: #d75b58;
+  --purple: #a568b5;
+}
+
+html {
+  background: #050304;
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% -8%, rgba(147, 65, 99, 0.24), transparent 35rem),
+    radial-gradient(circle at 92% 3%, rgba(208, 151, 59, 0.14), transparent 31rem),
+    radial-gradient(circle at 46% 74%, rgba(92, 42, 68, 0.12), transparent 42rem),
+    linear-gradient(180deg, #10070c 0, #070405 36rem, #030203 100%);
+  color: var(--ink);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline-color: #e6bd67;
+}
+
+.app-header {
+  border-color: rgba(232, 194, 121, 0.19);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(151, 62, 97, 0.3), transparent 42%),
+    linear-gradient(135deg, rgba(31, 13, 22, 0.98), rgba(12, 7, 10, 0.96));
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.42), 0 0 32px rgba(128, 51, 83, 0.12);
+}
+
+.brand-mark {
+  border-color: rgba(244, 214, 157, 0.52);
+  background:
+    radial-gradient(circle at 34% 27%, #f9e8b9 0 4%, #d59f3e 13%, #74334c 56%, #160a10 100%);
+  box-shadow:
+    0 0 0 4px rgba(208, 160, 72, 0.07),
+    0 0 28px rgba(176, 83, 108, 0.2),
+    inset 0 -9px 18px rgba(0, 0, 0, 0.36);
+}
+
+.eyebrow,
+.app-header .eyebrow,
+.catalog-hero .eyebrow {
+  color: #d8b76f;
+}
+
+.overall-progress span,
+.catalog-hero__kicker,
+.catalog-directory .eyebrow {
+  color: #ead9c0;
+}
+
+.overall-progress i::before,
+.stat i::before {
+  background: linear-gradient(90deg, #99506c, #d7a94f, #b86a45);
+}
+
+.button--primary,
+.app-header .button--primary,
+.view-tab.is-active {
+  border-color: rgba(239, 202, 126, 0.58);
+  background: linear-gradient(135deg, #b48134, #74402d 48%, #55233a);
+  box-shadow: 0 8px 24px rgba(117, 43, 67, 0.23);
+  color: #fff8ea;
+}
+
+.button:hover,
+.view-tab:hover {
+  border-color: rgba(231, 191, 111, 0.36);
+  background-color: rgba(112, 52, 73, 0.16);
+}
+
+.view-tabs,
+.catalog-toolbar,
+.catalog-results-head,
+.catalog-progress article,
+.feature-card,
+.market-workbench,
+.swap-lab,
+.activity-tool {
+  border-color: rgba(226, 190, 122, 0.13);
+  background:
+    linear-gradient(145deg, rgba(31, 16, 23, 0.9), rgba(10, 6, 8, 0.94));
+}
+
+.stat {
+  border-color: rgba(224, 184, 106, 0.13);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(145, 65, 91, 0.13), transparent 52%),
+    linear-gradient(150deg, #160d12, #090608);
+}
+
+.stat strong {
+  color: #e8c16f;
+}
+
+.catalog-hero {
+  border-color: rgba(225, 185, 108, 0.16);
+  background:
+    radial-gradient(circle at 9% 12%, rgba(143, 56, 90, 0.24), transparent 35%),
+    radial-gradient(circle at 92% 8%, rgba(210, 158, 63, 0.13), transparent 30%),
+    linear-gradient(145deg, #160b11, #070405 62%, #030203);
+}
+
+.catalog-hero h2 em {
+  color: #d9ae57;
+}
+
+.catalog-hero__signal i,
+.sync-status[data-state="connecting"] i {
+  background: #d6a64a;
+  box-shadow: 0 0 0 4px rgba(214, 166, 74, 0.11), 0 0 14px rgba(214, 166, 74, 0.38);
+}
+
+.catalog-directory {
+  border-color: rgba(226, 188, 115, 0.15);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(131, 51, 82, 0.2), transparent 36%),
+    linear-gradient(145deg, #130a0f, #070405 68%);
+}
+
+.catalog-directory::after,
+.catalog-progress article::before {
+  background: linear-gradient(90deg, #9b63c7, #a76b83, #d7bd74, #6f9e58, #e6c967, #d29a3d, #db573d, #a36b3f, #8e697d, #67405f, #bd4e87);
+}
+
+.catalog-directory__all:hover,
+.catalog-directory__all.is-active,
+.catalog-directory__chip:hover,
+.catalog-directory__chip.is-active {
+  border-color: rgba(229, 188, 109, 0.38);
+  background: linear-gradient(135deg, rgba(132, 61, 84, 0.22), rgba(203, 151, 60, 0.1));
+}
+
+.catalog-toolbar input,
+.catalog-toolbar select,
+.market-calculator input,
+.swap-builder select {
+  border-color: rgba(231, 197, 132, 0.13);
+  background: #0c0709;
+  color: #f8f1e5;
+}
+
+.catalog-toolbar input:focus,
+.catalog-toolbar select:focus,
+.market-calculator input:focus,
+.swap-builder select:focus {
+  border-color: rgba(224, 176, 84, 0.58);
+  box-shadow: 0 0 0 3px rgba(155, 75, 100, 0.14);
+}
+
+.catalog-card,
+.catalog-grid[data-layout="photos"] .catalog-card,
+.catalog-grid[data-layout="cards"] .catalog-card {
+  background:
+    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--card-el) 28%, transparent), transparent 31%),
+    radial-gradient(circle at 100% 64%, color-mix(in srgb, var(--card-el) 13%, transparent), transparent 38%),
+    linear-gradient(155deg, #25151d 0%, #120b0f 46%, #070405 100%);
+}
+
+.catalog-card__topline {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--card-el) 20%, transparent), transparent 48%),
+    rgba(11, 6, 9, 0.88);
+}
+
+.catalog-card__photo,
+.catalog-grid[data-layout="photos"] .catalog-card__photo,
+.catalog-grid[data-layout="cards"] .catalog-card__photo {
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--card-el) 26%, transparent), transparent 50%),
+    #0a0608;
+}
+
+.catalog-card__label {
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--card-el) 14%, rgba(13, 7, 10, 0.95)), rgba(8, 5, 7, 0.88));
+}
+
+.catalog-card__body,
+.catalog-card__actions,
+.catalog-grid[data-layout="photos"] .catalog-card__actions {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--card-el) 8%, transparent), transparent 45%),
+    rgba(9, 5, 8, 0.84);
+}
+
+.catalog-card__spec,
+.catalog-card__market {
+  background: rgba(4, 2, 3, 0.34);
+}
+
+.catalog-card__spec small,
+.catalog-card__market small,
+.catalog-card__section-head small {
+  color: #927f82;
+}
+
+.catalog-card__taxonomy span:last-child,
+.catalog-card__status {
+  color: #a49395;
+}
+
+.catalog-card__actions .button {
+  background: rgba(255, 241, 215, 0.035);
+}
+
+.catalog-card__actions .button--primary {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--card-el) 58%, #6e3a32 42%), color-mix(in srgb, var(--card-el) 36%, #3a1826 64%));
+}
+
+.catalog-detail,
+.catalog-dialog,
+.market-selected,
+.achievement-grid article,
+.activity-list article {
+  border-color: rgba(229, 191, 119, 0.14);
+  background:
+    linear-gradient(145deg, rgba(27, 14, 20, 0.98), rgba(8, 5, 7, 0.98));
+}
+
+@media (max-width: 620px) {
+  body {
+    background:
+      radial-gradient(circle at 20% -4%, rgba(143, 57, 89, 0.22), transparent 24rem),
+      radial-gradient(circle at 92% 7%, rgba(205, 151, 58, 0.12), transparent 22rem),
+      #050304;
+  }
+}

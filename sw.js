@@ -1,6 +1,6 @@
-const CORE_CACHE_NAME = 'gibly-core-vault-v3';
-const LIBRARY_CACHE_NAME = 'gibly-offline-library-v3';
-const LIBRARY_REVISION = 'complete-card-library-2026-07-25-v3';
+const CORE_CACHE_NAME = 'gibly-core-vault-v4';
+const LIBRARY_CACHE_NAME = 'gibly-offline-library-v4';
+const LIBRARY_REVISION = 'complete-card-library-2026-07-25-v4';
 const LIBRARY_STATUS_URL = './offline-library-status.json';
 const UNRELEASED_CARD_IDS = new Set([
   'catalog-11513604',
@@ -15,20 +15,21 @@ const CORE_ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './public/manifest-ipad.webmanifest',
-  './src/app.js?v=vault-v3',
+  './src/app.js?v=warm-v4',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=vault-v3',
-  './src/components/FeatureSuite.js?v=vault-v2',
+  './src/components/MasterCatalog.js?v=warm-v4',
+  './src/components/FeatureSuite.js?v=warm-v4',
   './src/components/CloudSync.js?v=vault-v2',
   './src/styles/gallery.css?v=vault-v2',
   './src/styles/card-v2.css?v=vault-v2',
   './src/styles/card-v3.css?v=vault-v3',
   './src/styles/feature-suite.css?v=vault-v2',
+  './src/styles/theme-warm-v4.css?v=warm-v4',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',

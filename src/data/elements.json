@@ -1,7 +1,7 @@
 {
   "Air": {
-    "color": "#b9e7f5",
-    "dark": "#5595b2",
+    "color": "#d7bd74",
+    "dark": "#725626",
     "icon": "☁"
   },
   "Dark": {
@@ -40,13 +40,13 @@
     "icon": "⚙"
   },
   "Undead": {
-    "color": "#596474",
-    "dark": "#222a35",
+    "color": "#8e697d",
+    "dark": "#412633",
     "icon": "☠"
   },
   "Water": {
-    "color": "#2c82d2",
-    "dark": "#0f4278",
+    "color": "#a76b83",
+    "dark": "#553040",
     "icon": "💧"
   },
   "Kaos": {
