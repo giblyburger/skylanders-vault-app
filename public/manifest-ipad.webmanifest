@@ -1,0 +1,25 @@
+{
+  "name": "Gibly's Skylanders Vault Display",
+  "short_name": "Vault Display",
+  "description": "The offline iPad library and AirPlay controller for Gibly's complete Skylanders collection.",
+  "start_url": "../?display=ipad",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

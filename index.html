@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gibly's Vault">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="A scan-ready Skylanders Vault with 640 original one-item collector cards, game compatibility, technical IDs, guides, and collection tracking.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Gibly's Skylanders Master Vault">
+    <meta property="og:description" content="640 original collector cards for individually released figures, variants, Traps, vehicles, crystals, items, and Portals.">
+    <meta property="og:image" content="public/vault-social-v2.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gibly's Skylanders Master Vault">
+    <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
+    <meta name="twitter:image" content="public/vault-social-v2.png">
+    <title>Gibly's Skylanders Master Vault</title>
+    <link rel="manifest" href="manifest.webmanifest" data-app-manifest>
+    <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
+    <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
+    <script>
+      if (!Promise.allSettled) {
+        Promise.allSettled = function (items) {
+          return Promise.all(Array.from(items).map(function (item) {
+            return Promise.resolve(item).then(function (value) {
+              return { status: 'fulfilled', value: value };
+            }, function (reason) {
+              return { status: 'rejected', reason: reason };
+            });
+          }));
+        };
+      }
+      if (!Array.prototype.flatMap) {
+        Array.prototype.flatMap = function (callback, thisArg) {
+          return Array.prototype.concat.apply([], this.map(callback, thisArg));
+        };
+      }
+      try {
+        var ipadDevice = /iPad/.test(navigator.userAgent)
+          || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var ipadOs = navigator.userAgent.match(/OS (\d+)[_\.]/);
+        if (ipadDevice) document.documentElement.classList.add('ipad-device');
+        if (ipadDevice && (!ipadOs || Number(ipadOs[1]) <= 15)) {
+          document.documentElement.classList.add('legacy-ipad');
+        }
+        var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
+        var savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
+        if (displayRequest === 'ipad' || (displayRequest !== 'standard' && (savedDisplay === 'ipad' || ipadDevice))) {
+          document.documentElement.dataset.displayMode = 'ipad';
+          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
+        }
+      } catch (error) {}
+    </script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=vault-v2">
+    <link rel="stylesheet" href="src/styles/card-v2.css?v=vault-v2">
+    <link rel="stylesheet" href="src/styles/card-v3.css?v=vault-v3">
+    <link rel="stylesheet" href="src/styles/feature-suite.css?v=vault-v2">
+    <script type="module" src="src/app.js?v=vault-v3"></script>
+  </head>
+  <body>
+    <div class="app-shell" data-app-root>
+      <header class="app-header">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <circle cx="24" cy="24" r="16"></circle>
+              <path d="M24 8v8M24 32v8M8 24h8M32 24h8"></path>
+              <circle cx="24" cy="24" r="6"></circle>
+            </svg>
+          </span>
+          <div>
+            <p class="eyebrow">Complete Collection Companion</p>
+            <h1>Skylanders Vault</h1>
+          </div>
+        </div>
+
+        <div class="overall-progress" aria-label="Overall progress">
+          <span data-overall-label>0% complete</span>
+          <i data-overall-meter style="--value:0%"></i>
+        </div>
+
+        <div class="header-actions" aria-label="Backup and app actions">
+          <button class="sync-status" data-sync-status data-state="connecting" type="button" aria-label="Collection sync status: Connecting"><i></i><span>Connecting</span></button>
+          <button class="button display-mode-button" type="button" data-display-mode aria-pressed="false">iPad Display</button>
+          <button class="button button--primary" type="button" data-export>Export</button>
+          <button class="button" type="button" data-import>Import</button>
+          <button class="button button--danger" type="button" data-reset>Reset</button>
+          <button class="button" type="button" data-install hidden>Install</button>
+          <button class="button offline-library-button" type="button" data-offline-library aria-pressed="false" hidden>Offline Library</button>
+          <input data-import-file type="file" accept="application/json" hidden>
+        </div>
+      </header>
+
+      <section class="summary-grid" data-summary aria-label="Collection progress"></section>
+
+      <section class="controls" aria-label="Collection filters">
+        <label class="search-field">
+          <span class="sr-only">Search villains and Traps</span>
+          <input data-search type="search" autocomplete="off" placeholder="Search villains, Traps, molds">
+        </label>
+        <label>
+          <span>Element</span>
+          <select data-filter-element></select>
+        </label>
+        <label>
+          <span>Villain</span>
+          <select data-filter-villain></select>
+        </label>
+        <label>
+          <span>Mold</span>
+          <select data-filter-mold></select>
+        </label>
+        <label>
+          <span>Group</span>
+          <select data-filter-group></select>
+        </label>
+      </section>
+
+      <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
+
+      <nav class="view-tabs series-navigation" aria-label="Browse every Skylanders game">
+        <button class="view-tab series-nav__game is-active" type="button" data-game-nav="" aria-pressed="true">All Games</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Spyro's Adventure" aria-pressed="false" style="--series-nav-accent:#8f65d8">Spyro’s Adventure</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Giants" aria-pressed="false" style="--series-nav-accent:#ef573f">Giants</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="SWAP Force" aria-pressed="false" style="--series-nav-accent:#79d8e7">SWAP Force</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Trap Team" aria-pressed="false" style="--series-nav-accent:#269ee8">Trap Team</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="SuperChargers" aria-pressed="false" style="--series-nav-accent:#e6a13a">SuperChargers</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Imaginators" aria-pressed="false" style="--series-nav-accent:#60bf58">Imaginators</button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="reference" aria-selected="false">Series Guide</button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="tools" aria-selected="false">Vault Tools</button>
+      </nav>
+
+      <main>
+        <section class="view" data-view="board" hidden>
+          <div class="board-stage" data-board-stage>
+            <div class="vault-board" data-board-shell>
+              <div class="board-plaque">
+                <span>Cloudcracker Villain Vault</span>
+                <strong>46 slots</strong>
+              </div>
+              <div class="villain-board" data-villain-board></div>
+              <div class="status-legend" aria-label="Villain status legend">
+                <span><i class="legend-dot legend-dot--not-found"></i>Not Found</span>
+                <span><i class="legend-dot legend-dot--defeated"></i>Defeated</span>
+                <span><i class="legend-dot legend-dot--trapped"></i>Trapped</span>
+                <span><i class="legend-dot legend-dot--evolved"></i>Evolved</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-view="rack" hidden>
+          <div class="rack-shell">
+            <header class="section-header">
+              <h2>Traptanium Trap Rack</h2>
+              <p>60 core releases + 6 factory-loaded villain variants</p>
+            </header>
+            <div class="trap-rack" data-trap-rack></div>
+          </div>
+        </section>
+
+        <section class="view" data-view="catalog">
+          <div class="catalog-shell" data-master-catalog>
+            <section class="vault-loading" aria-live="polite">
+              <span></span>
+              <div><strong>Loading the complete collection</strong><small>Six games · 640 individual cards</small></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-view="reference" hidden>
+          <section class="series-guide">
+            <header class="series-guide__hero">
+              <p class="eyebrow">Complete six-game reference</p>
+              <h2>One vault. Every era.</h2>
+              <p>Browse the full console series in release order, understand forward compatibility, and open specialized tools only when you need them.</p>
+            </header>
+            <div class="series-guide__grid">
+              <article style="--guide-accent:#8f65d8"><small>2011 · Game 01</small><h3>Spyro’s Adventure</h3><p>The original 32-character roster, Adventure Packs, Magic Items, and first-generation Portal.</p></article>
+              <article style="--guide-accent:#ef573f"><small>2012 · Game 02</small><h3>Giants</h3><p>Giants, LightCores, Series 2 figures, and the expanded returning roster.</p></article>
+              <article style="--guide-accent:#79d8e7"><small>2013 · Game 03</small><h3>SWAP Force</h3><p>Swappable characters, new cores, Series 3 figures, and location pieces.</p></article>
+              <article style="--guide-accent:#269ee8"><small>2014 · Game 04</small><h3>Trap Team</h3><p>Trap Masters, Minis, villain Traps, and the Traptanium Portal system.</p></article>
+              <article style="--guide-accent:#e6a13a"><small>2015 · Game 05</small><h3>SuperChargers</h3><p>Drivers, vehicles, terrain classes, trophies, and SuperCharged pairings.</p></article>
+              <article style="--guide-accent:#60bf58"><small>2016 · Game 06</small><h3>Imaginators</h3><p>Senseis, Creation Crystals, Imaginite Chests, and the final main release line.</p></article>
+            </div>
+            <section class="compatibility-primer">
+              <div><p class="eyebrow">Quick compatibility rule</p><h3>Figures generally work forward, not backward.</h3><p>A figure works in the game it debuted with and later games. Game-specific hardware, vehicles, Traps, and Creation Crystals have additional rules shown on their individual cards.</p></div>
+              <ol><li><strong>Find its debut game</strong><span>Shown on every Vault card.</span></li><li><strong>Check “Works with”</strong><span>Exact supported games are listed.</span></li><li><strong>Use the matching Portal</strong><span>Portal requirements remain hardware-specific.</span></li></ol>
+            </section>
+            <section class="specialized-tools-panel">
+              <div><p class="eyebrow">Optional specialized tools</p><h3>Trap Team workspace</h3><p>The villain board and physical Trap rack are preserved here without taking over the full-series experience.</p></div>
+              <div><button class="button" type="button" data-view-tab="board">Open Villain Vault</button><button class="button" type="button" data-view-tab="rack">Open Trap Rack</button></div>
+            </section>
+          </section>
+        </section>
+
+        <section class="view" data-view="tools" hidden>
+          <div data-feature-suite></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="dialog-shell pairing-dialog" data-pairing-dialog aria-labelledby="pairing-title">
+      <form class="pairing-card" data-pairing-form>
+        <button class="pairing-card__close" data-pairing-skip type="button" aria-label="Browse without syncing">&times;</button>
+        <div class="pairing-card__signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="eyebrow">Private collection</p>
+        <h2 id="pairing-title">Pair this device</h2>
+        <p class="pairing-card__intro">The complete catalog is ready to browse. Enter your private code once to unlock your collection progress, personal photos, and instant syncing on this device.</p>
+        <label class="pairing-code-field">
+          <span>Pairing code</span>
+          <input data-pairing-code type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="XXXX-XXXX-XXXX">
+        </label>
+        <p class="pairing-card__error" data-pairing-error role="alert" aria-live="polite" hidden></p>
+        <div class="pairing-card__actions">
+          <button class="button button--primary" data-pairing-submit type="submit">Pair &amp; sync</button>
+          <button class="button" data-pairing-skip type="button">Browse without syncing</button>
+        </div>
+        <small>Your private collection and photos stay locked until the correct code is entered.</small>
+      </form>
+    </dialog>
+    <dialog class="dialog-shell" data-trap-dialog></dialog>
+    <dialog class="dialog-shell catalog-dialog" data-catalog-dialog></dialog>
+    <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

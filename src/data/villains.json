@@ -1,0 +1,278 @@
+[
+  {
+    "id": "villain-dr-krankcase",
+    "name": "Dr. Krankcase",
+    "element": "Tech",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-bruiser-cruiser",
+    "name": "Bruiser Cruiser",
+    "element": "Tech",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-shrednaught",
+    "name": "Shrednaught",
+    "element": "Tech",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-brawlrus",
+    "name": "Brawlrus",
+    "element": "Tech",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-trolling-thunder",
+    "name": "Trolling Thunder",
+    "element": "Tech",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-mab-lobs",
+    "name": "Mab Lobs",
+    "element": "Tech",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-the-gulper",
+    "name": "The Gulper",
+    "element": "Water",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-slobber-trap",
+    "name": "Slobber Trap",
+    "element": "Water",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-chill-bill",
+    "name": "Chill Bill",
+    "element": "Water",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-brawl--chain",
+    "name": "Brawl & Chain",
+    "element": "Water",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-cross-crow",
+    "name": "Cross Crow",
+    "element": "Water",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-threatpack",
+    "name": "Threatpack",
+    "element": "Water",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-sheep-creep",
+    "name": "Sheep Creep",
+    "element": "Life",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-broccoli-guy",
+    "name": "Broccoli Guy",
+    "element": "Life",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-chompy-mage",
+    "name": "Chompy Mage",
+    "element": "Life",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-cuckoo-clocker",
+    "name": "Cuckoo Clocker",
+    "element": "Life",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-shield-shredder",
+    "name": "Shield Shredder",
+    "element": "Life",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-chompy",
+    "name": "Chompy",
+    "element": "Life",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-wolfgang",
+    "name": "Wolfgang",
+    "element": "Undead",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-masker-mind",
+    "name": "Masker Mind",
+    "element": "Undead",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-hood-sickle",
+    "name": "Hood Sickle",
+    "element": "Undead",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-bone-chompy",
+    "name": "Bone Chompy",
+    "element": "Undead",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-golden-queen",
+    "name": "Golden Queen",
+    "element": "Earth",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-tussle-sprout",
+    "name": "Tussle Sprout",
+    "element": "Earth",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-chomp-chest",
+    "name": "Chomp Chest",
+    "element": "Earth",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-grave-clobber",
+    "name": "Grave Clobber",
+    "element": "Earth",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-dreamcatcher",
+    "name": "Dreamcatcher",
+    "element": "Air",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-buzzer-beak",
+    "name": "Buzzer Beak",
+    "element": "Air",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-krankenstein",
+    "name": "Krankenstein",
+    "element": "Air",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-bad-juju",
+    "name": "Bad Juju",
+    "element": "Air",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-chef-pepper-jack",
+    "name": "Chef Pepper Jack",
+    "element": "Fire",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-scrap-shooter",
+    "name": "Scrap Shooter",
+    "element": "Fire",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-grinnade",
+    "name": "Grinnade",
+    "element": "Fire",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-smoke-scream",
+    "name": "Smoke Scream",
+    "element": "Fire",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-bomb-shell",
+    "name": "Bomb Shell",
+    "element": "Magic",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-pain-yatta",
+    "name": "Pain-Yatta",
+    "element": "Magic",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-rage-mage",
+    "name": "Rage Mage",
+    "element": "Magic",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-luminous",
+    "name": "Luminous",
+    "element": "Light",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-blaster-tron",
+    "name": "Blaster-Tron",
+    "element": "Light",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-eye-five",
+    "name": "Eye Five",
+    "element": "Light",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-lob-goblin",
+    "name": "Lob Goblin",
+    "element": "Light",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-nightshade",
+    "name": "Nightshade",
+    "element": "Dark",
+    "doomRaider": true
+  },
+  {
+    "id": "villain-eye-scream",
+    "name": "Eye Scream",
+    "element": "Dark",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-fisticuffs",
+    "name": "Fisticuffs",
+    "element": "Dark",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-tae-kwon-crow",
+    "name": "Tae Kwon Crow",
+    "element": "Dark",
+    "doomRaider": false
+  },
+  {
+    "id": "villain-kaos",
+    "name": "Kaos",
+    "element": "Kaos",
+    "doomRaider": true
+  }
+]
