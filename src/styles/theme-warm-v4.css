@@ -262,7 +262,7 @@ a:focus-visible {
 html[data-display-mode="tv"] {
   color-scheme: dark;
   background: #030203;
-  font-size: 18px;
+  font-size: 17px;
 }
 
 html[data-display-mode="tv"] body {
@@ -274,30 +274,31 @@ html[data-display-mode="tv"] body {
 }
 
 html[data-display-mode="tv"] .app-shell {
-  width: min(calc(100% - 48px), 1900px);
-  padding-top: 18px;
-  padding-bottom: 56px;
+  width: min(calc(100% - 64px), 1800px);
+  padding-top: 14px;
+  padding-bottom: 48px;
 }
 
 html[data-display-mode="tv"] .app-header {
   position: sticky;
-  top: 14px;
+  top: 10px;
   z-index: 90;
-  grid-template-columns: minmax(310px, 1fr) minmax(260px, 420px) auto;
-  min-height: 92px;
-  padding: 16px 20px;
-  border-radius: 24px;
+  grid-template-columns: minmax(310px, 1fr) minmax(280px, 440px) auto;
+  min-height: 78px;
+  padding: 11px 16px;
+  border-radius: 20px;
 }
 
 html[data-display-mode="tv"] .brand-mark {
-  width: 58px;
-  height: 58px;
+  width: 50px;
+  height: 50px;
 }
 
 html[data-display-mode="tv"] .app-header h1 {
-  font-size: 1.55rem;
+  font-size: 1.35rem;
 }
 
+html[data-display-mode="tv"] .sync-status,
 html[data-display-mode="tv"] .header-actions [data-export],
 html[data-display-mode="tv"] .header-actions [data-import],
 html[data-display-mode="tv"] .header-actions [data-reset],
@@ -311,49 +312,130 @@ html[data-display-mode="tv"] .view-tab,
 html[data-display-mode="tv"] .catalog-toolbar input,
 html[data-display-mode="tv"] .catalog-toolbar select,
 html[data-display-mode="tv"] .catalog-results-tools .button {
-  min-height: 52px;
+  min-height: 48px;
   font-size: 0.86rem;
 }
 
+html[data-display-mode="tv"] .series-navigation {
+  position: relative;
+  top: auto;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  margin: 12px 0 16px;
+  padding: 7px;
+  overflow: visible;
+  border-radius: 18px;
+}
+
+html[data-display-mode="tv"] .series-navigation .view-tab {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 10px;
+  font-size: 0.76rem;
+  font-weight: 760;
+  text-align: center;
+}
+
+html[data-display-mode="tv"] .series-navigation .series-nav__guide {
+  margin-left: 0;
+  border-left: 0;
+  border-radius: 11px;
+}
+
+html[data-display-mode="tv"] .series-navigation .view-tab.is-active {
+  border-color: rgba(239, 202, 126, 0.5);
+  background: linear-gradient(135deg, #a87331, #713928 48%, #512036);
+  box-shadow: 0 8px 22px rgba(76, 29, 45, 0.3), inset 0 1px rgba(255, 248, 230, 0.12);
+  color: #fff8ea;
+}
+
 html[data-display-mode="tv"] .catalog-hero {
-  min-height: 570px;
-  margin-top: 18px;
-  padding: clamp(42px, 5vw, 82px);
-  border-radius: 32px;
-}
-
-html[data-display-mode="tv"] .catalog-hero h2 {
-  font-size: clamp(4.4rem, 6vw, 7.4rem);
-}
-
-html[data-display-mode="tv"] .catalog-hero__copy > p:not(.eyebrow) {
-  max-width: 680px;
-  font-size: 1.14rem;
-  line-height: 1.7;
+  display: none;
 }
 
 html[data-display-mode="tv"] .catalog-directory {
-  padding: 30px;
-  border-radius: 28px;
+  padding: 20px 22px 22px;
+  border-radius: 24px;
+}
+
+html[data-display-mode="tv"] .catalog-directory__head {
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+html[data-display-mode="tv"] .catalog-directory__head .eyebrow {
+  margin-bottom: 4px;
+  font-size: 0.62rem;
+}
+
+html[data-display-mode="tv"] .catalog-directory__head h3 {
+  margin-bottom: 0;
+  font-size: 1.65rem;
+}
+
+html[data-display-mode="tv"] .catalog-directory__head p:not(.eyebrow) {
+  display: none;
+}
+
+html[data-display-mode="tv"] .catalog-directory__all {
+  min-width: 190px;
+  min-height: 66px;
+  padding: 10px 15px;
 }
 
 html[data-display-mode="tv"] .catalog-directory__games {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 16px;
+  gap: 11px;
 }
 
 html[data-display-mode="tv"] .series-card {
-  min-height: 190px;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 11px;
+  min-height: 142px;
+  padding: 10px;
+  border-radius: 16px;
+}
+
+html[data-display-mode="tv"] .series-card__art {
+  width: 66px;
+}
+
+html[data-display-mode="tv"] .series-card__copy {
+  gap: 4px;
+}
+
+html[data-display-mode="tv"] .series-card__copy strong {
+  font-size: 0.96rem;
+}
+
+html[data-display-mode="tv"] .catalog-directory__types {
+  display: none;
+}
+
+html[data-display-mode="tv"] .catalog-progress {
+  display: none;
+}
+
+html[data-display-mode="tv"] .catalog-toolbar {
+  padding: 11px;
+  border-radius: 18px;
+}
+
+html[data-display-mode="tv"] .scan-station,
+html[data-display-mode="tv"] .nfc-studio {
+  display: none;
 }
 
 html[data-display-mode="tv"] .catalog-grid[data-layout="cards"] {
-  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
 }
 
 html[data-display-mode="tv"] .catalog-grid[data-layout="photos"] {
-  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px;
 }
 
 html[data-display-mode="tv"] .catalog-card {
@@ -368,6 +450,20 @@ html[data-display-mode="tv"] .display-mode-button.is-active {
   border-color: rgba(230, 189, 108, 0.5);
   background: linear-gradient(135deg, #b48134, #74402d 48%, #55233a);
   color: #fff8ea;
+}
+
+@media (min-width: 2560px) {
+  html[data-display-mode="tv"] .app-shell {
+    max-width: 2380px;
+  }
+
+  html[data-display-mode="tv"] .catalog-grid[data-layout="cards"] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  html[data-display-mode="tv"] .catalog-grid[data-layout="photos"] {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1100px) {

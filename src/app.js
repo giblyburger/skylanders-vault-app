@@ -2,7 +2,7 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=warm-v4';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=display-v8';
 import { createFeatureSuite } from './components/FeatureSuite.js?v=warm-v4';
 import { createCloudSync } from './components/CloudSync.js?v=vault-v2';
 import { actionIcon } from './components/icons.js?v=animation-2';
@@ -440,6 +440,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   const mode = ['standard', 'ipad', 'tv'].includes(requestedMode) ? requestedMode : 'standard';
   document.documentElement.dataset.displayMode = mode;
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
+  if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
   if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest' : 'manifest.webmanifest';
 
@@ -847,7 +848,7 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=display-v6', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=display-v8', { updateViaCache: 'none' })
     .then((registration) => {
       offlineRegistration = registration;
       refs.offlineButton.hidden = false;

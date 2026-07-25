@@ -54,7 +54,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     element: '',
     ownership: '',
     sort: 'name',
-    layout: 'photos',
+    layout: document.documentElement.dataset.displayMode === 'tv' ? 'cards' : 'photos',
     limit: pageSize,
     activeCardId: '',
     nfcSelection: '',
@@ -1061,7 +1061,13 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     }
   }
 
-  return { render, open, identifyScan, scanNfc, writeNfc, setGameFilter, meta: catalog.meta };
+  function setLayout(layout) {
+    if (!['photos', 'cards'].includes(layout) || state.layout === layout) return;
+    state.layout = layout;
+    render();
+  }
+
+  return { render, open, identifyScan, scanNfc, writeNfc, setGameFilter, setLayout, meta: catalog.meta };
 }
 
 function showVaultDialog(dialog) {
