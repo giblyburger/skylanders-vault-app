@@ -21,7 +21,6 @@ const MAX_STATE_BYTES = 5 * 1024 * 1024;
 const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const SESSION_COOKIE = 'gibly_vault_session';
-const SESSION_MAX_AGE = 365 * 24 * 60 * 60;
 const NATIVE_ORIGINS = new Set(['capacitor://localhost', 'ionic://localhost']);
 
 export default {
@@ -32,9 +31,7 @@ export default {
 
     let response;
     try {
-      if (url.pathname === '/api/pair') {
-        response = await handlePairing(request, env, url);
-      } else if (url.pathname.startsWith('/api/photos/') && request.method === 'GET') {
+      if (url.pathname.startsWith('/api/photos/') && request.method === 'GET') {
         if (!env.DB || !env.PHOTOS) {
           response = json({ error: 'Photo storage is not configured yet.' }, 503);
         } else {
@@ -44,7 +41,7 @@ export default {
       } else {
         const ownerEmail = await authenticatedEmail(request, url, env);
         if (!ownerEmail) {
-          response = json({ error: 'Pair this device to sync your private vault.' }, 401);
+          response = json({ error: 'Sign in to sync your private vault.' }, 401);
         } else if (!env.DB) {
           response = json({ error: 'Cloud sync is not configured yet.' }, 503);
         } else {
@@ -68,70 +65,39 @@ async function authenticatedEmail(request, url, env) {
   if (forwarded && (!owner || forwarded === owner)) return forwarded;
   if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return 'local-preview@skylanders.app';
   if (await hasValidNativeSession(request, env)) return owner;
-  if (await hasValidPairingCookie(request, env)) return owner;
+  if (await hasValidLegacySessionCookie(request, env)) return owner;
   return '';
 }
 
-async function handlePairing(request, env, url) {
-  if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) {
-    return json({ error: 'Device pairing is not configured yet.' }, 503);
-  }
-
-  if (request.method === 'GET') {
-    return json({ paired: Boolean(await authenticatedEmail(request, url, env)) });
-  }
-
-  if (request.method === 'DELETE') {
-    return json({ paired: false }, 200, {
-      'set-cookie': `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${url.protocol === 'https:' ? '; Secure' : ''}`
-    });
-  }
-
-  if (request.method !== 'POST') return methodNotAllowed(['GET', 'POST', 'DELETE']);
-  const bodyText = await request.text();
-  if (bodyText.length > 2048) return json({ error: 'Pairing request is too large.' }, 413);
-  let body;
-  try { body = JSON.parse(bodyText); } catch { return json({ error: 'Enter the pairing code shown by the Vault owner.' }, 400); }
-  if (!await secureCodeMatch(body?.code, env.VAULT_PAIRING_CODE)) {
-    return json({ error: 'That pairing code is not correct.' }, 401);
-  }
-
-  const token = await pairingSessionToken(env.VAULT_PAIRING_CODE);
-  const nativeClient = request.headers.get('x-vault-native') === 'ios';
-  return json({ paired: true, ...(nativeClient ? { sessionToken: token } : {}) }, 200, {
-    'set-cookie': `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE}${url.protocol === 'https:' ? '; Secure' : ''}`
-  });
-}
-
-async function hasValidPairingCookie(request, env) {
-  if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) return false;
+async function hasValidLegacySessionCookie(request, env) {
+  const secret = sessionSecret(env);
+  if (!secret || !env.VAULT_OWNER_EMAIL) return false;
   const cookies = parseCookies(request.headers.get('cookie') || '');
   const supplied = cookies.get(SESSION_COOKIE) || '';
   if (!supplied) return false;
-  const expected = await pairingSessionToken(env.VAULT_PAIRING_CODE);
+  const expected = await legacySessionToken(secret);
   return timingSafeEqual(supplied, expected);
 }
 
 async function hasValidNativeSession(request, env) {
-  if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) return false;
+  const secret = sessionSecret(env);
+  if (!secret || !env.VAULT_OWNER_EMAIL) return false;
   const authorization = request.headers.get('authorization') || '';
   const supplied = authorization.match(/^Bearer\s+([a-f0-9]{64})$/i)?.[1] || '';
   if (!supplied) return false;
-  const expected = await pairingSessionToken(env.VAULT_PAIRING_CODE);
+  const expected = await legacySessionToken(secret);
   return timingSafeEqual(supplied, expected);
 }
 
-async function secureCodeMatch(supplied, expected) {
-  const suppliedHash = await sha256(normalizePairingCode(supplied));
-  const expectedHash = await sha256(normalizePairingCode(expected));
-  return timingSafeEqual(suppliedHash, expectedHash);
+function sessionSecret(env) {
+  return String(env.VAULT_NATIVE_SESSION_SECRET || env.VAULT_PAIRING_CODE || '');
 }
 
-async function pairingSessionToken(secret) {
-  return sha256(`gibly-vault-session-v1:${normalizePairingCode(secret)}`);
+async function legacySessionToken(secret) {
+  return sha256(`gibly-vault-session-v1:${normalizeSessionSecret(secret)}`);
 }
 
-function normalizePairingCode(value) {
+function normalizeSessionSecret(value) {
   return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 

@@ -8,7 +8,7 @@ A complete, offline-first Skylanders collection app covering every main series f
 - Figures, variants, Traps, vehicles, Creation Crystals, Portals, Magic Items, Adventure pieces, and accessories.
 - Separate reference treatment for unreleased, technical-only, digital, pack, and villain records.
 - Search, collection quantities, condition, packaging, storage, notes, purchase details, personal photos, compatibility, and exact documented scan IDs.
-- Local-first use with optional private cloud sync across paired devices.
+- Local-first use with automatic private sync in authorized sessions.
 - Standard, iPad, and TV/AirPlay display layouts.
 - A built-in daily release check with a verified IPA download link and backup reminder.
 
@@ -20,7 +20,7 @@ The GitHub workflow builds an unsigned IPA for jailbroken devices. Tagged builds
 
 `Skylanders-Vault-unsigned.ipa`
 
-The complete interface, catalog, and card-art library are bundled into the IPA. Internet access is only needed for cloud sync, pairing, personal-photo backup, and future updates.
+The complete interface, catalog, and card-art library are bundled into the IPA. Internet access is only needed for authorized cloud sync, personal-photo backup, and future updates.
 
 The Series Guide shows the installed version and checks the published GitHub release. It never replaces the app automatically: export a collection backup, download the verified IPA, and install it over the existing app with the same bundle ID.
 

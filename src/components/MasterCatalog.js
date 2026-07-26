@@ -1,5 +1,5 @@
 import { escapeHtml, normalizeText } from './helpers.js?v=animation-2';
-import { resolveCloudResourceUrl } from './CloudSync.js?v=stable-v19';
+import { resolveCloudResourceUrl } from './CloudSync.js?v=stable-v20';
 
 const GAME_SHORT = {
   "Spyro's Adventure": 'SSA',
@@ -11,16 +11,32 @@ const GAME_SHORT = {
 };
 
 const GAME_LINES = [
-  { name: "Spyro's Adventure", year: 2011, number: '01', feature: 'Spyro', accent: '#f4f4f5' },
-  { name: 'Giants', year: 2012, number: '02', feature: 'Tree Rex', accent: '#d7d7da' },
-  { name: 'SWAP Force', year: 2013, number: '03', feature: 'Wash Buckler', accent: '#bcbcc1' },
-  { name: 'Trap Team', year: 2014, number: '04', feature: 'Snap Shot', accent: '#eeeeef' },
-  { name: 'SuperChargers', year: 2015, number: '05', feature: 'Spitfire', accent: '#c9c9cd' },
-  { name: 'Imaginators', year: 2016, number: '06', feature: 'King Pen', accent: '#fafafa' }
+  { name: "Spyro's Adventure", year: 2011, number: '01', feature: 'Spyro', accent: '#a985f4' },
+  { name: 'Giants', year: 2012, number: '02', feature: 'Tree Rex', accent: '#f06f5a' },
+  { name: 'SWAP Force', year: 2013, number: '03', feature: 'Wash Buckler', accent: '#bc8a63' },
+  { name: 'Trap Team', year: 2014, number: '04', feature: 'Snap Shot', accent: '#ce7ba4' },
+  { name: 'SuperChargers', year: 2015, number: '05', feature: 'Spitfire', accent: '#f0ad54' },
+  { name: 'Imaginators', year: 2016, number: '06', feature: 'King Pen', accent: '#76ce72' }
 ];
 
 const CONDITION_OPTIONS = ['Not graded', 'New / sealed', 'Like new', 'Good', 'Played', 'Damaged', 'Parts / repair'];
 const PACKAGING_OPTIONS = ['Loose', 'Carded / sealed', 'Boxed', 'Package only'];
+const GAME_ORDER = ["Spyro's Adventure", 'Giants', 'SWAP Force', 'Trap Team', 'SuperChargers', 'Imaginators', 'Unknown'];
+const CATEGORY_ORDER = [
+  'Skylander Figure',
+  'Trap',
+  'Vehicle',
+  'Creation Crystal',
+  'Magic Item',
+  'Adventure / Level Piece',
+  'Trophy',
+  'Portal',
+  'Accessory',
+  'Imaginite Chest',
+  'Custom / Promotional'
+];
+const ELEMENT_ORDER = ['Magic', 'Water', 'Tech', 'Fire', 'Earth', 'Life', 'Air', 'Undead', 'Light', 'Dark', 'Kaos', 'None'];
+const NATURAL_COMPARE = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare;
 const UNRELEASED_CARD_IDS = new Set([
   'catalog-11513604',
   'catalog-11513621',
@@ -38,7 +54,9 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   const pageSize = LEGACY_IPAD ? 12 : ipadDevice ? 18 : 30;
   let detailCatalog = catalog.details || null;
   let detailPromise = null;
-  const cardNumberById = new Map(collectibleCards.map((card, index) => [card.id, index + 1]));
+  const cardNumberById = new Map(
+    collectibleCards.slice().sort(compareCatalogCards).map((card, index) => [card.id, index + 1])
+  );
   const searchIndexById = new Map(collectibleCards.map((card) => {
     const displayName = normalizeText(card.name);
     const relatedNames = [card.canonicalName, card.baseName].filter(Boolean).map(normalizeText);
@@ -54,7 +72,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     category: '',
     element: '',
     ownership: '',
-    sort: 'name',
+    sort: 'series order',
     layout: document.documentElement.dataset.displayMode === 'tv' ? 'cards' : 'photos',
     limit: pageSize,
     activeCardId: '',
@@ -94,9 +112,9 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   }
 
   function renderShell() {
-    const games = unique(collectibleCards.map((card) => card.game).filter((game) => game && game !== 'Unknown'));
-    const categories = unique(collectibleCards.map((card) => card.category));
-    const elements = unique(collectibleCards.map((card) => card.element).filter((element) => element && element !== 'None'));
+    const games = unique(collectibleCards.map((card) => card.game).filter((game) => game && game !== 'Unknown'), gameOrder);
+    const categories = unique(collectibleCards.map((card) => card.category), categoryOrder);
+    const elements = unique(collectibleCards.map((card) => card.element).filter((element) => element && element !== 'None'), elementOrder);
     const featureNames = ['Spyro', 'Tree Rex', 'Wash Buckler', 'Snap Shot', 'Spitfire'].slice(0, LEGACY_IPAD ? 3 : 5);
     const featured = featureNames.map((name) => collectibleCards.find((card) => card.name === name)).filter(Boolean);
     container.innerHTML = `
@@ -139,7 +157,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         ${selectMarkup('Type', 'category', categories)}
         ${selectMarkup('Element', 'element', elements)}
         ${selectMarkup('Collection', 'ownership', ['Owned', 'Missing', 'Wishlist', 'Scanned'])}
-        ${selectMarkup('Sort', 'sort', ['Name', 'Game', 'Type', 'Owned first'])}
+        ${selectMarkup('Sort', 'sort', ['Series order', 'A–Z', 'Item type', 'Owned first'])}
       </section>
 
       <div class="catalog-results-head">
@@ -259,10 +277,10 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
 
     container.querySelector('[data-catalog-clear]').addEventListener('click', () => {
-      Object.assign(state, { search: '', game: '', category: '', element: '', ownership: '', sort: 'name', limit: pageSize });
+      Object.assign(state, { search: '', game: '', category: '', element: '', ownership: '', sort: 'series order', limit: pageSize });
       search.value = '';
       ['game', 'category', 'element', 'ownership', 'sort'].forEach((key) => {
-        container.querySelector(`[data-catalog-${key}]`).value = key === 'sort' ? 'name' : '';
+        container.querySelector(`[data-catalog-${key}]`).value = key === 'sort' ? 'series order' : '';
       });
       render();
     });
@@ -383,12 +401,14 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     });
 
     const sorters = {
-      name: (left, right) => left.card.name.localeCompare(right.card.name),
-      game: (left, right) => gameOrder(left.card.game) - gameOrder(right.card.game) || left.card.name.localeCompare(right.card.name),
-      category: (left, right) => left.card.category.localeCompare(right.card.category) || left.card.name.localeCompare(right.card.name),
-      'owned first': (left, right) => Number(right.record.copies.length > 0) - Number(left.record.copies.length > 0) || left.card.name.localeCompare(right.card.name)
+      'series order': (left, right) => compareCatalogCards(left.card, right.card),
+      'a–z': (left, right) => NATURAL_COMPARE(left.card.name, right.card.name),
+      'item type': (left, right) => categoryOrder(left.card.category) - categoryOrder(right.card.category)
+        || compareCatalogCards(left.card, right.card),
+      'owned first': (left, right) => Number(right.record.copies.length > 0) - Number(left.record.copies.length > 0)
+        || compareCatalogCards(left.card, right.card)
     };
-    const activeSorter = sorters[state.sort] || sorters.name;
+    const activeSorter = sorters[state.sort] || sorters['series order'];
     filtered.sort((left, right) => (query ? left.searchRank - right.searchRank : 0) || activeSorter(left, right));
 
     const visible = filtered.slice(0, state.limit);
@@ -415,11 +435,11 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       if (card.element && card.element !== 'None') elementCounts.set(card.element, (elementCounts.get(card.element) || 0) + 1);
     });
     const categoryButtons = [...categoryCounts.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .sort((a, b) => categoryOrder(a[0]) - categoryOrder(b[0]) || NATURAL_COMPARE(a[0], b[0]))
       .map(([category, count]) => `<button class="catalog-directory__chip${state.category === category ? ' is-active' : ''}" type="button" data-directory-category="${escapeHtml(category)}" aria-pressed="${state.category === category}"><span>${escapeHtml(category)}</span><strong>${count}</strong></button>`)
       .join('');
     const elementButtons = [...elementCounts.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => elementOrder(a[0]) - elementOrder(b[0]) || NATURAL_COMPARE(a[0], b[0]))
       .map(([element, count]) => `<button class="catalog-directory__chip catalog-directory__element-chip${state.element === element ? ' is-active' : ''}" type="button" data-directory-element="${escapeHtml(element)}" aria-pressed="${state.element === element}" style="--element-accent:${elementColor(element)}"><i aria-hidden="true"></i><span>${escapeHtml(element)}</span><strong>${count}</strong></button>`)
       .join('');
 
@@ -1148,8 +1168,10 @@ function selectMarkup(label, key, options) {
   return `<label><span>${escapeHtml(label)}</span><select data-catalog-${key}><option value="">All ${escapeHtml(label.toLowerCase())}</option>${values.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}</select></label>`;
 }
 
-function unique(values) {
-  return Array.from(new Set(values)).sort((left, right) => left.localeCompare(right)).map((value) => ({ value, label: value }));
+function unique(values, rank = () => 0) {
+  return Array.from(new Set(values))
+    .sort((left, right) => rank(left) - rank(right) || NATURAL_COMPARE(left, right))
+    .map((value) => ({ value, label: value }));
 }
 
 function fact(label, value) {
@@ -1200,7 +1222,7 @@ function copyMarkup(copy, index) {
       ${photos.length ? `<div class="copy-photo-grid">${photos.map((photo) => {
         const photoUrl = resolveCloudResourceUrl(photo.url);
         return `<figure><button type="button" data-photo-viewer-src="${escapeHtml(photoUrl)}" data-photo-viewer-alt="Personal photo of copy ${index + 1}" data-photo-viewer-label="${escapeHtml(photo.filename || `Copy ${index + 1} photo`)}"><img loading="lazy" src="${escapeHtml(photoUrl)}" alt="Personal collection photo"></button><button class="copy-photo-delete" type="button" data-delete-photo="${escapeHtml(photo.id)}" data-copy-id="${escapeHtml(copy.id)}" aria-label="Delete this photo">×</button></figure>`;
-      }).join('')}</div>` : '<p class="copy-photos__empty">Tap Add photo to open the camera. It will appear on your other paired devices after syncing.</p>'}
+      }).join('')}</div>` : '<p class="copy-photos__empty">Tap Add photo to open the camera. Signed-in web sessions and previously authorized app installs sync automatically.</p>'}
     </section>
   </article>`;
 }
@@ -1279,9 +1301,47 @@ function makeCopyId() {
 }
 
 function gameOrder(game) {
-  const order = ["Spyro's Adventure", 'Giants', 'SWAP Force', 'Trap Team', 'SuperChargers', 'Imaginators', 'Unknown'];
-  const index = order.indexOf(game);
-  return index < 0 ? order.length : index;
+  const index = GAME_ORDER.indexOf(game);
+  return index < 0 ? GAME_ORDER.length : index;
+}
+
+function categoryOrder(category) {
+  const index = CATEGORY_ORDER.indexOf(category);
+  return index < 0 ? CATEGORY_ORDER.length : index;
+}
+
+function elementOrder(element) {
+  const index = ELEMENT_ORDER.indexOf(element);
+  return index < 0 ? ELEMENT_ORDER.length : index;
+}
+
+function editionOrder(edition) {
+  const value = normalizeText(edition || 'Standard');
+  if (value === 'standard' || value === 'series 1') return 0;
+  if (/^series 2\b/.test(value)) return 1;
+  if (/^series 3\b/.test(value)) return 2;
+  if (/^series 4\b/.test(value)) return 3;
+  if (value.includes('lightcore')) return 4;
+  if (value.includes('legendary')) return 5;
+  if (value.includes("eon's elite")) return 6;
+  if (value.includes('dark edition')) return 7;
+  if (value.includes('nitro') || value.includes('power blue')) return 8;
+  if (value.includes('chase') || value.includes('gold') || value.includes('silver') || value.includes('bronze') || value.includes('patina')) return 9;
+  if (value.includes('event') || value.includes('employee') || value.includes('seasonal') || value.includes('promotional')) return 10;
+  return 11;
+}
+
+function compareCatalogCards(left, right) {
+  const leftBase = left.canonicalName || left.baseName || left.name;
+  const rightBase = right.canonicalName || right.baseName || right.name;
+  return gameOrder(left.game) - gameOrder(right.game)
+    || Number(left.releaseYear || 9999) - Number(right.releaseYear || 9999)
+    || categoryOrder(left.category) - categoryOrder(right.category)
+    || elementOrder(left.element) - elementOrder(right.element)
+    || NATURAL_COMPARE(leftBase, rightBase)
+    || editionOrder(left.edition) - editionOrder(right.edition)
+    || NATURAL_COMPARE(left.name, right.name)
+    || NATURAL_COMPARE(left.id, right.id);
 }
 
 function formatCompactDate(value) {

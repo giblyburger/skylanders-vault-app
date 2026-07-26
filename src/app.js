@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v19';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v19';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v19';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v20';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v20';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v20';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -12,7 +12,7 @@ const STORAGE_KEY = 'gibly-skylanders-master-v5';
 const DISPLAY_MODE_KEY = 'gibly-skylanders-display-mode';
 const FRESH_START_KEY = 'gibly-skylanders-fresh-start-2026-07-21';
 const UPDATE_CHECK_KEY = 'gibly-skylanders-update-check-v1';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const RELEASE_ENDPOINT = 'https://api.github.com/repos/giblyburger/skylanders-vault-app/releases/latest';
 const UPDATE_CHECK_INTERVAL = 24 * 60 * 60 * 1000;
 const PREVIOUS_STORAGE_KEYS = [
@@ -115,12 +115,6 @@ const refs = {
   installSheet: document.querySelector('[data-install-sheet]'),
   installClose: Array.from(document.querySelectorAll('[data-install-close]')),
   offlineButton: document.querySelector('[data-offline-library]'),
-  pairingDialog: document.querySelector('[data-pairing-dialog]'),
-  pairingForm: document.querySelector('[data-pairing-form]'),
-  pairingCode: document.querySelector('[data-pairing-code]'),
-  pairingError: document.querySelector('[data-pairing-error]'),
-  pairingSubmit: document.querySelector('[data-pairing-submit]'),
-  pairingSkip: Array.from(document.querySelectorAll('[data-pairing-skip]')),
   trapDialog: document.querySelector('[data-trap-dialog]'),
   catalogRoot: document.querySelector('[data-master-catalog]'),
   featureSuiteRoot: document.querySelector('[data-feature-suite]'),
@@ -205,8 +199,7 @@ async function init() {
         persistState({ cloud: false });
         renderAll();
       },
-      onStatus: updateSyncStatus,
-      onPairingRequired: openPairingDialog
+      onStatus: updateSyncStatus
     });
     app.cloudSync.start();
     registerServiceWorker();
@@ -442,79 +435,9 @@ function wireEvents() {
   document.querySelector('[data-offline-library-guide]')?.addEventListener('click', downloadOfflineLibrary);
   refs.updateButton?.addEventListener('click', () => checkForAppUpdate({ manual: true }));
   refs.updateBackup?.addEventListener('click', exportBackup);
-  refs.syncStatus?.addEventListener('click', () => {
-    if (refs.syncStatus.dataset.state === 'locked') openPairingDialog();
-  });
-  refs.pairingCode?.addEventListener('input', () => {
-    const compact = refs.pairingCode.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
-    refs.pairingCode.value = compact.match(/.{1,4}/g)?.join('-') || '';
-    showPairingError('');
-  });
-  refs.pairingForm?.addEventListener('submit', pairCurrentDevice);
-  refs.pairingSkip.forEach((button) => button.addEventListener('click', closePairingDialog));
-  refs.pairingDialog?.addEventListener('close', clearPairingFallback);
   window.addEventListener('hashchange', openNfcDeepLink);
   setupBoardTilt();
   setupInstallPrompt();
-}
-
-async function pairCurrentDevice(event) {
-  event.preventDefault();
-  const code = refs.pairingCode?.value.trim() || '';
-  if (!code) {
-    showPairingError('Enter your private pairing code.');
-    refs.pairingCode?.focus();
-    return;
-  }
-
-  refs.pairingSubmit.disabled = true;
-  refs.pairingSubmit.textContent = 'Pairing…';
-  showPairingError('');
-  try {
-    await app.cloudSync.pair(code);
-    closePairingDialog();
-    refs.pairingCode.value = '';
-    showToast('Paired — your private collection is syncing');
-  } catch (error) {
-    showPairingError(error.message || 'This device could not be paired.');
-    refs.pairingCode?.select();
-  } finally {
-    refs.pairingSubmit.disabled = false;
-    refs.pairingSubmit.textContent = 'Pair & sync';
-  }
-}
-
-function openPairingDialog() {
-  const dialog = refs.pairingDialog;
-  if (!dialog || dialog.hasAttribute('open')) return;
-  showPairingError('');
-  if (typeof dialog.showModal === 'function') {
-    dialog.showModal();
-  } else {
-    dialog.setAttribute('open', '');
-    dialog.classList.add('dialog-shell--fallback');
-    document.body.classList.add('dialog-fallback-active');
-  }
-  setTimeout(() => refs.pairingCode?.focus(), 40);
-}
-
-function closePairingDialog() {
-  const dialog = refs.pairingDialog;
-  if (!dialog) return;
-  if (typeof dialog.close === 'function' && dialog.hasAttribute('open')) dialog.close();
-  else dialog.removeAttribute('open');
-  clearPairingFallback();
-}
-
-function clearPairingFallback() {
-  refs.pairingDialog?.classList.remove('dialog-shell--fallback');
-  document.body.classList.remove('dialog-fallback-active');
-}
-
-function showPairingError(message) {
-  if (!refs.pairingError) return;
-  refs.pairingError.textContent = message;
-  refs.pairingError.hidden = !message;
 }
 
 function applyInitialDisplayMode() {
@@ -545,7 +468,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v19' : 'manifest.webmanifest?v=stable-v19';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v20' : 'manifest.webmanifest?v=stable-v20';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -988,8 +911,8 @@ function registerServiceWorker() {
   });
   const registrationTask = INSTALLED_APP
     ? navigator.serviceWorker.getRegistration()
-        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v19', { updateViaCache: 'none' }))
-    : navigator.serviceWorker.register('sw.js?v=stable-v19', { updateViaCache: 'none' });
+        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v20', { updateViaCache: 'none' }))
+    : navigator.serviceWorker.register('sw.js?v=stable-v20', { updateViaCache: 'none' });
   registrationTask
     .then((registration) => {
       offlineRegistration = registration;

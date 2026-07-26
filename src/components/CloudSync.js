@@ -13,7 +13,7 @@ export function resolveCloudResourceUrl(path) {
   return new URL(value, CLOUD_ORIGIN).href;
 }
 
-export function createCloudSync({ getState, normalizeState, applyState, onStatus, onPairingRequired }) {
+export function createCloudSync({ getState, normalizeState, applyState, onStatus }) {
   let revision = 0;
   let baseState = clone(getState());
   let dirty = false;
@@ -42,13 +42,12 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       const error = new Error(payload.error || 'Cloud request failed.');
       error.status = response.status;
       error.payload = payload;
-      if (response.status === 401 && path !== '/api/pair') {
+      if (response.status === 401) {
         if (NATIVE_APP) {
           nativeSession = '';
           writeNativeSession('');
         }
-        locked = true;
-        onPairingRequired?.();
+        useLocalOnly();
       }
       throw error;
     }
@@ -81,8 +80,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       onStatus({ state: 'synced', text: 'Synced' });
     } catch (error) {
       if (error.status === 401) {
-        locked = true;
-        onStatus({ state: 'locked', text: 'Pair device' });
+        useLocalOnly();
       } else {
         onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Sync unavailable' : 'Offline' });
       }
@@ -94,7 +92,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
   function queue() {
     dirty = true;
     if (locked) {
-      onStatus({ state: 'locked', text: 'Pair device' });
+      useLocalOnly();
       return;
     }
     if (!navigator.onLine) {
@@ -130,9 +128,8 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
         applyState(merged);
         dirty = true;
       } else if (error.status === 401) {
-        locked = true;
         dirty = true;
-        onStatus({ state: 'locked', text: 'Pair device' });
+        useLocalOnly();
       } else {
         dirty = true;
         onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Retrying sync' : 'Saved offline' });
@@ -171,8 +168,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       }
     } catch (error) {
       if (error.status === 401) {
-        locked = true;
-        onStatus({ state: 'locked', text: 'Pair device' });
+        useLocalOnly();
       } else {
         onStatus({ state: navigator.onLine ? 'error' : 'offline', text: navigator.onLine ? 'Retrying sync' : 'Offline' });
       }
@@ -189,6 +185,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
 
   async function uploadPhoto(cardId, copyId, file) {
     if (!file || file.size > 12 * 1024 * 1024) throw new Error('Choose a photo smaller than 12 MB.');
+    if (locked) throw new Error('Photo sync is available in a signed-in web session or a previously authorized app install.');
     const params = new URLSearchParams({ cardId, copyId });
     const result = await request(`/api/photos?${params}`, {
       method: 'POST',
@@ -202,12 +199,19 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
   }
 
   async function deletePhoto(photoId) {
+    if (locked) throw new Error('Photo sync is not available in this on-device session.');
     await request(`/api/photos/${encodeURIComponent(photoId)}`, { method: 'DELETE' });
   }
 
   async function reset() {
     clearTimeout(saveTimer);
     dirty = false;
+    if (locked) {
+      revision = 0;
+      baseState = clone(normalizeState(getState()));
+      useLocalOnly();
+      return;
+    }
     saving = true;
     onStatus({ state: 'syncing', text: 'Clearing vault' });
     try {
@@ -221,41 +225,17 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
     await save();
   }
 
-  async function pair(code) {
-    clearTimeout(pollTimer);
+  function useLocalOnly() {
+    locked = true;
     clearTimeout(saveTimer);
-    onStatus({ state: 'connecting', text: 'Pairing' });
-    try {
-      const result = await request('/api/pair', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ code })
-      });
-      if (NATIVE_APP) {
-        const token = String(result?.sessionToken || '');
-        if (token) {
-          if (!/^[a-f0-9]{64}$/i.test(token)) throw new Error('The app did not receive a valid pairing session.');
-          nativeSession = token;
-          writeNativeSession(token);
-        }
-      }
-    } catch (error) {
-      locked = true;
-      onStatus({ state: 'locked', text: 'Pair device' });
-      throw error;
-    }
-    revision = 0;
-    locked = false;
-    started = false;
-    await start();
-    return true;
+    clearTimeout(pollTimer);
+    onStatus({ state: 'local', text: 'On device' });
   }
 
   document.addEventListener('visibilitychange', schedulePoll);
   window.addEventListener('online', () => {
     if (locked) {
-      onStatus({ state: 'locked', text: 'Pair device' });
-      onPairingRequired?.();
+      useLocalOnly();
       return;
     }
     onStatus({ state: 'connecting', text: 'Reconnecting' });
@@ -268,7 +248,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
     onStatus({ state: 'offline', text: 'Saved offline' });
   });
 
-  return { start, pair, queue, save, reset, uploadPhoto, deletePhoto, getRevision: () => revision };
+  return { start, queue, save, reset, uploadPhoto, deletePhoto, getRevision: () => revision };
 }
 
 export function mergeStates(base, local, remote) {

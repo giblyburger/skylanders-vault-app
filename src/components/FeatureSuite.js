@@ -58,7 +58,7 @@ export function createFeatureSuite(container, catalog, callbacks) {
           <div>
             <p class="eyebrow">Master checklist · complete suite</p>
             <h2>The complete collector toolkit.</h2>
-            <p>Every requested workflow lives here, with private collection data and personal photos syncing only to paired devices.</p>
+            <p>Every requested workflow lives here. Signed-in web sessions sync automatically, while the app remains fast and fully useful on-device.</p>
           </div>
           <button class="button button--primary" type="button" data-tools-tv>Start TV showcase</button>
         </header>
@@ -248,7 +248,7 @@ export function createFeatureSuite(container, catalog, callbacks) {
             <header><div><p class="eyebrow">Master checklist</p><h3>Feature status</h3></div><span class="status-ready">Ready</span></header>
             <div class="master-feature-list">
               ${featureRow('Museum + profiles', 'Complete 640-card visual catalog, filters, compatibility, sources, and full profiles.')}
-              ${featureRow('Physical copies + photos', 'Condition, packaging, storage, cost, notes, and cloud-synced personal photos across paired devices.')}
+              ${featureRow('Physical copies + photos', 'Condition, packaging, storage, cost, notes, and private photo sync in authorized sessions.')}
               ${featureRow('Live market workflow', 'Dated price snapshots plus one-click current sold comps and eBay evaluation.')}
               ${featureRow('Photo identification', 'Private on-device visual matching against the clean product-photo library.')}
               ${featureRow('Achievements + timeline', 'Collection milestones and a local audit trail.')}
@@ -647,7 +647,7 @@ export function createFeatureSuite(container, catalog, callbacks) {
     const timeline = (getState().timeline || []).slice().reverse();
     return `
       <section class="activity-tool">
-        <header class="tool-section-head"><div><p class="eyebrow">Collection history</p><h3>Activity timeline</h3><p>New collection changes are recorded here and included in your paired-device sync.</p></div></header>
+        <header class="tool-section-head"><div><p class="eyebrow">Collection history</p><h3>Activity timeline</h3><p>New collection changes are recorded here and included whenever private sync is available.</p></div></header>
         <div class="activity-list">
           ${timeline.length ? timeline.map((event) => `<article><i></i><div><strong>${escapeHtml(event.label)}</strong><span>${escapeHtml(event.type.replaceAll('_', ' '))}</span></div><time datetime="${escapeHtml(event.at)}">${escapeHtml(formatDate(event.at))}</time></article>`).join('') : '<div class="tool-empty">No activity yet. Add a card, create a SWAP assembly, or update a copy to begin.</div>'}
         </div>
