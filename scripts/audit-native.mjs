@@ -31,11 +31,14 @@ check(packageJson.dependencies?.['@capacitor/ios'] === '6.2.1', 'Capacitor iOS m
 check(packageJson.devDependencies?.['@capacitor/cli'] === '6.2.1', 'Capacitor CLI must match the native runtime.');
 check(capacitorConfig.appId === 'com.gibly.skylandersvault', 'Native bundle ID is incorrect.');
 check(capacitorConfig.webDir === 'dist/client', 'Native app must bundle the production client build.');
+check(capacitorConfig.plugins?.CapacitorHttp?.enabled === true, 'Native HTTP support must remain enabled for the hosted sync API.');
+check(capacitorConfig.plugins?.CapacitorCookies?.enabled === true, 'Native cookie support must remain enabled for paired-device sessions.');
 check((projectFile.match(/IPHONEOS_DEPLOYMENT_TARGET = 13\.0;/g) || []).length >= 2, 'iOS 13 deployment support is missing.');
 check((projectFile.match(/PRODUCT_BUNDLE_IDENTIFIER = com\.gibly\.skylandersvault;/g) || []).length === 2, 'Native bundle ID is not applied to both build configurations.');
 check(infoPlist.includes('<string>Skylanders Vault</string>'), 'Native display name is missing.');
 check(infoPlist.includes('<key>NSCameraUsageDescription</key>'), 'Camera permission text is missing.');
 check(infoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>'), 'Photo-library permission text is missing.');
+check(infoPlist.includes('<key>WKAppBoundDomains</key>') && infoPlist.includes('gibly-skylanders-vault.neumanng98.chatgpt.site'), 'The private sync host is missing from the iOS app-bound domains.');
 check(workflow.includes('CODE_SIGNING_ALLOWED=NO'), 'Unsigned IPA workflow must disable code signing.');
 check(workflow.includes('Skylanders-Vault-unsigned.ipa'), 'IPA workflow output name is missing.');
 check(cloudSync.includes("['capacitor:', 'ionic:'].includes(location.protocol)"), 'Native runtime detection is missing.');

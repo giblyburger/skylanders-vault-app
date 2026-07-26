@@ -1,5 +1,5 @@
 import { escapeHtml, normalizeText } from './helpers.js?v=animation-2';
-import { resolveCloudResourceUrl } from './CloudSync.js?v=stable-v17';
+import { resolveCloudResourceUrl } from './CloudSync.js?v=stable-v18';
 
 const GAME_SHORT = {
   "Spyro's Adventure": 'SSA',

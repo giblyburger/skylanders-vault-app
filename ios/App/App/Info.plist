@@ -53,5 +53,9 @@
 	<true/>
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleLightContent</string>
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>gibly-skylanders-vault.neumanng98.chatgpt.site</string>
+	</array>
 </dict>
 </plist>

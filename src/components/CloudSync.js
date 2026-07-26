@@ -32,7 +32,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       if (nativeSession) headers.authorization = `Bearer ${nativeSession}`;
     }
     const response = await fetch(resolveCloudResourceUrl(path), {
-      credentials: NATIVE_APP ? 'omit' : 'same-origin',
+      credentials: NATIVE_APP ? 'include' : 'same-origin',
       cache: 'no-store',
       ...options,
       headers
@@ -233,9 +233,11 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       });
       if (NATIVE_APP) {
         const token = String(result?.sessionToken || '');
-        if (!/^[a-f0-9]{64}$/i.test(token)) throw new Error('The app did not receive a valid pairing session.');
-        nativeSession = token;
-        writeNativeSession(token);
+        if (token) {
+          if (!/^[a-f0-9]{64}$/i.test(token)) throw new Error('The app did not receive a valid pairing session.');
+          nativeSession = token;
+          writeNativeSession(token);
+        }
       }
     } catch (error) {
       locked = true;
