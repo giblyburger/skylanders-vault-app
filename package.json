@@ -5,6 +5,7 @@
   "scripts": {
     "start": "python -m http.server 5173",
     "serve": "python -m http.server 5173",
+    "audit": "node scripts/audit-vault.mjs && node scripts/audit-card-art.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

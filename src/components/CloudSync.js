@@ -48,7 +48,7 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
         const local = normalizeState(getState());
         const localHasData = hasCollectionData(local);
         const merged = localHasData && !same(local, normalizedRemote)
-          ? mergeStates(baseState, local, normalizedRemote)
+          ? mergeStates(emptyState(), local, normalizedRemote)
           : normalizedRemote;
         baseState = clone(normalizedRemote);
         if (!same(local, merged)) applyState(merged);
@@ -243,25 +243,112 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
   return { start, pair, queue, save, reset, uploadPhoto, deletePhoto, getRevision: () => revision };
 }
 
-function mergeStates(base, local, remote) {
-  const merged = { version: Math.max(Number(local?.version || 0), Number(remote?.version || 0), 6) };
-  ['villains', 'traps', 'catalog'].forEach((section) => {
-    const baseMap = base?.[section] || {};
-    const localMap = local?.[section] || {};
-    const remoteMap = remote?.[section] || {};
-    merged[section] = {};
-    const keys = new Set([...Object.keys(baseMap), ...Object.keys(localMap), ...Object.keys(remoteMap)]);
-    keys.forEach((key) => {
-      const localChanged = !same(localMap[key], baseMap[key]);
-      const value = localChanged ? localMap[key] : remoteMap[key];
-      if (value !== undefined) merged[section][key] = clone(value);
-    });
-  });
+export function mergeStates(base, local, remote) {
+  const merged = {
+    version: Math.max(Number(local?.version || 0), Number(remote?.version || 0), 7),
+    villains: mergeObjectMap(base?.villains, local?.villains, remote?.villains),
+    traps: mergeObjectMap(base?.traps, local?.traps, remote?.traps),
+    catalog: mergeCatalogMap(base?.catalog, local?.catalog, remote?.catalog),
+    assemblies: mergeRecordArray(base?.assemblies, local?.assemblies, remote?.assemblies),
+    timeline: mergeTimeline(local?.timeline, remote?.timeline)
+  };
   return merged;
 }
 
+function emptyState() {
+  return { version: 7, villains: {}, traps: {}, catalog: {}, assemblies: [], timeline: [] };
+}
+
+function mergeObjectMap(base = {}, local = {}, remote = {}) {
+  const result = {};
+  const keys = new Set([...Object.keys(base || {}), ...Object.keys(local || {}), ...Object.keys(remote || {})]);
+  keys.forEach((key) => {
+    const value = chooseThreeWay(base?.[key], local?.[key], remote?.[key]);
+    if (value !== undefined) result[key] = clone(value);
+  });
+  return result;
+}
+
+function mergeCatalogMap(base = {}, local = {}, remote = {}) {
+  const result = {};
+  const keys = new Set([...Object.keys(base || {}), ...Object.keys(local || {}), ...Object.keys(remote || {})]);
+  keys.forEach((key) => {
+    const baseRecord = base?.[key];
+    const localRecord = local?.[key];
+    const remoteRecord = remote?.[key];
+    const localChanged = !same(localRecord, baseRecord);
+    const remoteChanged = !same(remoteRecord, baseRecord);
+    if (!localChanged || !remoteChanged || !localRecord || !remoteRecord) {
+      const value = localChanged ? localRecord : remoteRecord;
+      if (value !== undefined) result[key] = clone(value);
+      return;
+    }
+    result[key] = {
+      ...clone(remoteRecord),
+      ...clone(localRecord),
+      wishlist: Boolean(chooseThreeWay(baseRecord?.wishlist, localRecord.wishlist, remoteRecord.wishlist)),
+      notes: String(chooseThreeWay(baseRecord?.notes, localRecord.notes, remoteRecord.notes) || ''),
+      copies: mergeCopyArray(baseRecord?.copies, localRecord.copies, remoteRecord.copies)
+    };
+  });
+  return result;
+}
+
+function mergeCopyArray(base = [], local = [], remote = []) {
+  const baseMap = new Map((Array.isArray(base) ? base : []).filter((copy) => copy?.id).map((copy) => [copy.id, copy]));
+  const localList = (Array.isArray(local) ? local : []).filter((copy) => copy?.id);
+  const remoteList = (Array.isArray(remote) ? remote : []).filter((copy) => copy?.id);
+  const localMap = new Map(localList.map((copy) => [copy.id, copy]));
+  const remoteMap = new Map(remoteList.map((copy) => [copy.id, copy]));
+  const order = [...new Set([...localList.map((copy) => copy.id), ...remoteList.map((copy) => copy.id), ...baseMap.keys()])];
+  return order.map((id) => {
+    const baseCopy = baseMap.get(id);
+    const localCopy = localMap.get(id);
+    const remoteCopy = remoteMap.get(id);
+    const localChanged = !same(localCopy, baseCopy);
+    const remoteChanged = !same(remoteCopy, baseCopy);
+    if (!localChanged || !remoteChanged || !localCopy || !remoteCopy) {
+      return clone(localChanged ? localCopy : remoteCopy);
+    }
+    const mergedCopy = { ...clone(remoteCopy), ...clone(localCopy), id };
+    ['uid', 'condition', 'packaging', 'storage', 'acquired', 'paid', 'notes'].forEach((field) => {
+      mergedCopy[field] = chooseThreeWay(baseCopy?.[field], localCopy[field], remoteCopy[field]);
+    });
+    mergedCopy.photos = mergeRecordArray(baseCopy?.photos, localCopy.photos, remoteCopy.photos);
+    return mergedCopy;
+  }).filter((copy) => copy !== undefined);
+}
+
+function mergeRecordArray(base = [], local = [], remote = []) {
+  const baseMap = new Map((Array.isArray(base) ? base : []).filter((item) => item?.id).map((item) => [item.id, item]));
+  const localList = (Array.isArray(local) ? local : []).filter((item) => item?.id);
+  const remoteList = (Array.isArray(remote) ? remote : []).filter((item) => item?.id);
+  const localMap = new Map(localList.map((item) => [item.id, item]));
+  const remoteMap = new Map(remoteList.map((item) => [item.id, item]));
+  const order = [...new Set([...localList.map((item) => item.id), ...remoteList.map((item) => item.id), ...baseMap.keys()])];
+  return order.map((id) => chooseThreeWay(baseMap.get(id), localMap.get(id), remoteMap.get(id)))
+    .filter((item) => item !== undefined)
+    .map(clone);
+}
+
+function mergeTimeline(local = [], remote = []) {
+  const events = new Map();
+  [...(Array.isArray(remote) ? remote : []), ...(Array.isArray(local) ? local : [])]
+    .filter((event) => event?.id)
+    .forEach((event) => events.set(event.id, clone(event)));
+  return [...events.values()]
+    .sort((left, right) => String(left.at || '').localeCompare(String(right.at || '')))
+    .slice(-300);
+}
+
+function chooseThreeWay(base, local, remote) {
+  return !same(local, base) ? local : remote;
+}
+
 function hasCollectionData(state) {
-  return ['villains', 'traps', 'catalog'].some((section) => Object.keys(state?.[section] || {}).length > 0);
+  return ['villains', 'traps', 'catalog'].some((section) => Object.keys(state?.[section] || {}).length > 0)
+    || (Array.isArray(state?.assemblies) && state.assemblies.length > 0)
+    || (Array.isArray(state?.timeline) && state.timeline.length > 0);
 }
 
 function same(left, right) {
@@ -273,10 +360,9 @@ function clone(value) {
 }
 
 function getDeviceId() {
-  let id = localStorage.getItem(DEVICE_KEY);
-  if (!id) {
-    id = crypto.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    localStorage.setItem(DEVICE_KEY, id);
-  }
+  let id = '';
+  try { id = localStorage.getItem(DEVICE_KEY) || ''; } catch {}
+  if (!id) id = globalThis.crypto?.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  try { localStorage.setItem(DEVICE_KEY, id); } catch {}
   return id;
 }

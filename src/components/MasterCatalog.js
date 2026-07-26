@@ -43,7 +43,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const relatedNames = [card.canonicalName, card.baseName].filter(Boolean).map(normalizeText);
     const aliases = (card.scl?.aliases || []).map(normalizeText);
     const identityText = normalizeText((card.scanIdentities || []).map((identity) => `${identity.name} ${identity.charId} ${identity.variantId}`).join(' '));
-    const supportingText = normalizeText(`${card.id} ${card.category} ${card.element} ${card.edition} ${card.role} ${identityText}`);
+    const supportingText = normalizeText(`${card.id} ${card.productId || ''} ${card.game || ''} ${card.releaseYear || ''} ${card.category} ${card.element} ${card.edition} ${card.role} ${identityText}`);
     return [card.id, { displayName, relatedNames, aliases, supportingText }];
   }));
   const referenceCount = catalog.cards.length - collectibleCards.length + (catalog.scanCatalog || catalog.unmappedScanIdentities || []).filter((identity) => ['technical-only', 'in-game/digital'].includes(identity.releaseStatus)).length;
@@ -287,12 +287,14 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
     const nfcButton = container.querySelector('[data-nfc-scan]');
     const nfcWriteButton = container.querySelector('[data-nfc-write]');
+    const nfcStudio = container.querySelector('.nfc-studio');
     const nfcCopySelect = container.querySelector('[data-nfc-copy-select]');
     const nfcCapability = container.querySelector('[data-nfc-capability]');
     const nfcSafetyCheck = container.querySelector('[data-nfc-safety-check]');
     const nfcSafetyPhrase = container.querySelector('[data-nfc-safety-phrase]');
     const nfcGateStatus = container.querySelector('[data-nfc-gate-status]');
     const nfcSupported = window.isSecureContext && 'NDEFReader' in window;
+    nfcStudio.hidden = !nfcSupported;
     const updateNfcGate = () => {
       state.nfcUnlocked = Boolean(nfcSafetyCheck.checked && nfcSafetyPhrase.value.trim().toUpperCase() === 'UNLOCK PERSONAL TAG');
       nfcGateStatus.textContent = state.nfcUnlocked ? 'Personal-tag writing unlocked for this session.' : 'Writing is locked.';
@@ -478,7 +480,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const cardArt = wallArtworkUrl(card);
     const cardNumber = cardNumberById.get(card.id) || 0;
     const releaseLine = [card.game || 'Reference archive', card.releaseYear].filter(Boolean).join(' · ');
-    const seriesLine = [card.scl?.series || card.role, card.edition || 'Standard'].filter(Boolean).join(' · ') || 'Catalog collectible';
+    const seriesLine = [...new Set([card.scl?.series || card.role, card.edition || 'Standard'].filter(Boolean))].join(' · ') || 'Catalog collectible';
     const marketLoose = card.market?.loose || '—';
     const marketNew = card.market?.new || '—';
     const marketDate = formatCompactDate(card.marketAsOf);
@@ -552,11 +554,42 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   function wallCardMarkup(card, record) {
     const owned = record.copies.length;
     const cardArt = wallArtworkUrl(card);
+    const identity = card.scanIdentities?.[0];
+    const cardNumber = cardNumberById.get(card.id) || 0;
+    const compatibilityCount = Object.values(card.compatibility || {})
+      .filter((value) => String(value).startsWith('yes')).length;
+    const elementName = card.element !== 'None' ? card.element : 'Vault';
+    const releaseLine = [card.game || 'Reference', card.releaseYear].filter(Boolean).join(' · ');
+    const classification = [...new Set([card.role && card.role !== card.category ? card.role : '', card.edition && card.edition !== 'Standard' ? card.edition : '']
+      .filter(Boolean))]
+      .join(' · ') || 'Standard release';
+    const identityLine = identity
+      ? `Scan ${identity.charId} · ${identity.variantId}`
+      : 'Collector catalog record';
     return `<article class="catalog-card catalog-card--wall" data-owned="${owned > 0}" data-wishlist="${record.wishlist}" style="--card-el:${elementColor(card.element)}">
       <div class="catalog-card__visual">
         <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
           <img class="catalog-card__art" loading="lazy" decoding="async" width="320" height="480" src="${escapeHtml(cardArt)}" alt="${escapeHtml(card.name)} generated collector artwork" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
           <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
+          <span class="catalog-card__wall-head">
+            <span class="catalog-card__element-mark" aria-hidden="true"></span>
+            <strong>${escapeHtml(card.name)}</strong>
+            <em>${escapeHtml(elementName)}</em>
+          </span>
+          <span class="catalog-card__wall-info">
+            <span class="catalog-card__wall-type">
+              <strong>${escapeHtml(card.category)}</strong>
+              <em>${escapeHtml(classification)}</em>
+            </span>
+            <span class="catalog-card__wall-rules">
+              <b>${compatibilityCount ? `${compatibilityCount} compatible game${compatibilityCount === 1 ? '' : 's'}` : 'Reference item'}</b>
+              <small>${escapeHtml(identityLine)}</small>
+            </span>
+            <span class="catalog-card__wall-footer">
+              <span>${escapeHtml(releaseLine)}</span>
+              <span>SV-${String(cardNumber).padStart(3, '0')}</span>
+            </span>
+          </span>
           ${owned ? `<span class="catalog-card__owned">Owned · ${owned}</span>` : record.wishlist ? '<span class="catalog-card__owned catalog-card__owned--wanted">Wanted</span>' : ''}
         </button>
         <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault"><span aria-hidden="true">+</span></button>
@@ -571,7 +604,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const compatibilityGames = Object.entries(card.compatibility || {}).filter(([, value]) => String(value).startsWith('yes')).map(([game]) => GAME_SHORT[game] || game);
     const verification = verificationLabel(card.verification?.status);
     const cardArt = wallArtworkUrl(card);
-    const seriesLine = [card.element !== 'None' ? card.element : '', card.scl?.series || card.role, card.edition && card.edition !== 'Standard' ? card.edition : ''].filter(Boolean).join(' · ') || 'Source-backed catalog record';
+    const seriesLine = [...new Set([card.element !== 'None' ? card.element : '', card.scl?.series || card.role, card.edition && card.edition !== 'Standard' ? card.edition : ''].filter(Boolean))].join(' · ') || 'Source-backed catalog record';
     const releaseLine = [card.releaseYear, card.game || 'Reference'].filter(Boolean).join(' · ');
     const scanLine = identity ? `${identity.charId} · ${identity.variantId}` : 'No exact NFC identity';
     const worksWithLine = compatibilityGames.length ? compatibilityGames.join(' · ') : 'Not applicable';
@@ -784,7 +817,12 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         const updated = readRecordFromDialog(record);
         const removed = updated.copies.find((copy) => copy.id === button.dataset.removeCopy);
         if (removed?.photos?.length && !confirm('Remove this copy and all of its uploaded photos?')) return;
-        await Promise.allSettled((removed?.photos || []).map((photo) => callbacks.onDeletePhoto?.(photo.id)));
+        try {
+          await Promise.all((removed?.photos || []).map((photo) => callbacks.onDeletePhoto(photo.id)));
+        } catch (error) {
+          callbacks.onToast(error?.message || 'The synced photos could not be removed yet.');
+          return;
+        }
         updated.copies = updated.copies.filter((copy) => copy.id !== button.dataset.removeCopy);
         saveRecord(card.id, updated);
         renderDialog(card);
@@ -804,7 +842,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           const photo = await callbacks.onUploadPhoto(card.id, copyId, file);
           const updated = readRecordFromDialog(record);
           const copy = updated.copies.find((item) => item.id === copyId);
-          if (copy && photo) copy.photos.push(normalizePhoto(photo));
+          const normalizedPhoto = normalizePhoto(photo);
+          if (copy && normalizedPhoto) copy.photos.push(normalizedPhoto);
           saveRecord(card.id, updated, 'Photo added and syncing');
           renderDialog(card);
         } catch (error) {

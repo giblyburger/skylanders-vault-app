@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v11';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v11';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v11';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v14';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v14';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v14';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -30,6 +30,35 @@ const UNRELEASED_CARD_IDS = new Set([
   'catalog-11513673',
   'catalog-58496'
 ]);
+const GAME_RELEASE_YEARS = {
+  "Spyro's Adventure": 2011,
+  Giants: 2012,
+  'SWAP Force': 2013,
+  'Trap Team': 2014,
+  SuperChargers: 2015,
+  Imaginators: 2016
+};
+const EONS_ELITE_RELEASE_GAMES = {
+  'Chop Chop': 'Trap Team',
+  Eruptor: 'Trap Team',
+  'Gill Grunt': 'Trap Team',
+  Spyro: 'Trap Team',
+  'Stealth Elf': 'Trap Team',
+  Terrafin: 'Trap Team',
+  'Trigger Happy': 'Trap Team',
+  Whirlwind: 'Trap Team',
+  Boomer: 'SuperChargers',
+  'Dino-Rang': 'SuperChargers',
+  'Ghost Roaster': 'SuperChargers',
+  'Slam Bam': 'SuperChargers',
+  Voodood: 'SuperChargers',
+  Zook: 'SuperChargers'
+};
+const SPECIAL_RELEASE_GAMES = {
+  'Portal Of Power [Glow In The Dark]': 'Giants',
+  'Sir Hoodington': 'Imaginators',
+  'Spyro - E3, 2011': "Spyro's Adventure"
+};
 
 const app = {
   elements: {},
@@ -110,21 +139,27 @@ async function init() {
     app.elements = elements;
     app.villains = villains;
     app.traps = traps;
-    app.catalog = catalog;
+    app.catalog = normalizeCatalogReleaseLines(catalog);
     app.villainsById = new Map(villains.map((villain) => [villain.id, villain]));
     app.trapsById = new Map(traps.map((trap) => [trap.id, trap]));
     applyFreshStartMigration();
     app.state = loadState();
     app.editor = createTrapEditor(refs.trapDialog, { onSave: saveTrap });
-    app.catalogController = createMasterCatalog(refs.catalogRoot, refs.catalogDialog, catalog, {
+    app.catalogController = createMasterCatalog(refs.catalogRoot, refs.catalogDialog, app.catalog, {
       getState: () => app.state,
       onSave: saveCatalogRecord,
       onToast: showToast,
       onGameChange: updateGameNavigation,
-      onUploadPhoto: (...args) => app.cloudSync?.uploadPhoto(...args),
-      onDeletePhoto: (...args) => app.cloudSync?.deletePhoto(...args)
+      onUploadPhoto: (...args) => {
+        if (!app.cloudSync) throw new Error('Cloud photo sync is still connecting.');
+        return app.cloudSync.uploadPhoto(...args);
+      },
+      onDeletePhoto: (...args) => {
+        if (!app.cloudSync) throw new Error('Cloud photo sync is still connecting.');
+        return app.cloudSync.deletePhoto(...args);
+      }
     });
-    app.featureSuite = createFeatureSuite(refs.featureSuiteRoot, catalog, {
+    app.featureSuite = createFeatureSuite(refs.featureSuiteRoot, app.catalog, {
       getState: () => app.state,
       openCard: (cardId) => app.catalogController.open(cardId),
       onToast: showToast,
@@ -137,7 +172,7 @@ async function init() {
     window.skylandersScan = {
       identify: (scan) => app.catalogController.identifyScan(scan),
       openCard: (cardId) => app.catalogController.open(cardId),
-      catalogVersion: catalog.meta.generatedAt
+      catalogVersion: app.catalog.meta.generatedAt
     };
     window.skylandersNfc = {
       identify: (scan) => app.catalogController.identifyScan(scan),
@@ -178,18 +213,42 @@ function freshState() {
 }
 
 function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return freshState();
   try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return freshState();
     return normalizeState(JSON.parse(saved));
   } catch {}
   return freshState();
 }
 
+function normalizeCatalogReleaseLines(catalog) {
+  if (!catalog || !Array.isArray(catalog.cards)) return catalog;
+  const cards = catalog.cards.map((card) => {
+    const statedRelease = String(card?.scl?.allInfo?.['Released With'] || '').trim();
+    const eliteName = card.name.match(/^Eon['’]s Elite (.+)$/)?.[1] || '';
+    const releaseGame = GAME_RELEASE_YEARS[statedRelease]
+      ? statedRelease
+      : /battleground/i.test(statedRelease)
+        ? 'Giants'
+        : EONS_ELITE_RELEASE_GAMES[eliteName] || SPECIAL_RELEASE_GAMES[card.name] || '';
+    if (!releaseGame || (card.game === releaseGame && card.releaseYear === GAME_RELEASE_YEARS[releaseGame])) return card;
+    return { ...card, game: releaseGame, releaseYear: GAME_RELEASE_YEARS[releaseGame] };
+  });
+  const scanIndex = { ...(catalog.scanIndex || {}) };
+  cards.forEach((card) => {
+    (card.scanIdentities || []).forEach((identity) => {
+      if (identity?.charId && identity?.variantId) scanIndex[`${identity.charId}:${identity.variantId}`] = card.id;
+    });
+  });
+  return { ...catalog, cards, scanIndex };
+}
+
 function applyFreshStartMigration() {
-  if (localStorage.getItem(FRESH_START_KEY)) return;
-  PREVIOUS_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
-  localStorage.setItem(FRESH_START_KEY, new Date().toISOString());
+  try {
+    if (localStorage.getItem(FRESH_START_KEY)) return;
+    PREVIOUS_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem(FRESH_START_KEY, new Date().toISOString());
+  } catch {}
 }
 
 function normalizeState(raw) {
@@ -213,63 +272,88 @@ function normalizeState(raw) {
   const catalogIds = new Set((app.catalog?.cards || []).filter(isCollectibleCard).map((card) => card.id));
   Object.entries(source.catalog || {}).forEach(([cardId, record]) => {
     if (!catalogIds.has(cardId)) return;
-    const copies = Array.isArray(record?.copies) ? record.copies : [];
+    const copies = Array.isArray(record?.copies) ? record.copies.slice(0, 250) : [];
+    const seenCopyIds = new Set();
     clean.catalog[cardId] = {
       wishlist: Boolean(record?.wishlist),
-      notes: String(record?.notes || ''),
-      copies: copies.map((copy, index) => ({
-        id: String(copy?.id || `imported-${cardId}-${index}`),
-        uid: String(copy?.uid || ''),
-        condition: String(copy?.condition || 'Not graded'),
-        packaging: String(copy?.packaging || 'Loose'),
-        storage: String(copy?.storage || ''),
-        acquired: String(copy?.acquired || ''),
-        paid: String(copy?.paid || ''),
-        notes: String(copy?.notes || ''),
-        photos: Array.isArray(copy?.photos) ? copy.photos.map(normalizePhoto).filter(Boolean) : []
-      }))
+      notes: cleanText(record?.notes, 10000),
+      copies: copies.map((copy, index) => {
+        const id = cleanText(copy?.id || `imported-${cardId}-${index}`, 180);
+        if (!id || seenCopyIds.has(id)) return null;
+        seenCopyIds.add(id);
+        const seenPhotoIds = new Set();
+        const photos = (Array.isArray(copy?.photos) ? copy.photos : [])
+          .map(normalizePhoto)
+          .filter((photo) => photo && !seenPhotoIds.has(photo.id) && seenPhotoIds.add(photo.id))
+          .slice(0, 50);
+        return {
+          id,
+          uid: cleanText(copy?.uid, 240),
+          condition: cleanText(copy?.condition || 'Not graded', 80),
+          packaging: cleanText(copy?.packaging || 'Loose', 80),
+          storage: cleanText(copy?.storage, 300),
+          acquired: cleanText(copy?.acquired, 40),
+          paid: cleanText(copy?.paid, 80),
+          notes: cleanText(copy?.notes, 5000),
+          photos
+        };
+      }).filter(Boolean)
     };
   });
 
+  const seenAssemblyIds = new Set();
   clean.assemblies = Array.isArray(source.assemblies)
     ? source.assemblies.slice(0, 200).map((assembly) => ({
-      id: String(assembly?.id || ''),
-      topCardId: String(assembly?.topCardId || ''),
-      bottomCardId: String(assembly?.bottomCardId || ''),
-      name: String(assembly?.name || ''),
-      createdAt: String(assembly?.createdAt || '')
-    })).filter((assembly) => assembly.id && catalogIds.has(assembly.topCardId) && catalogIds.has(assembly.bottomCardId))
+      id: cleanText(assembly?.id, 180),
+      topCardId: cleanText(assembly?.topCardId, 180),
+      bottomCardId: cleanText(assembly?.bottomCardId, 180),
+      name: cleanText(assembly?.name, 240),
+      createdAt: cleanText(assembly?.createdAt, 60)
+    })).filter((assembly) => assembly.id
+      && !seenAssemblyIds.has(assembly.id)
+      && seenAssemblyIds.add(assembly.id)
+      && catalogIds.has(assembly.topCardId)
+      && catalogIds.has(assembly.bottomCardId))
     : [];
 
+  const seenEventIds = new Set();
   clean.timeline = Array.isArray(source.timeline)
     ? source.timeline.slice(-300).map((event) => ({
-      id: String(event?.id || ''),
-      type: String(event?.type || 'update'),
-      cardId: String(event?.cardId || ''),
-      label: String(event?.label || 'Collection updated'),
-      at: String(event?.at || '')
-    })).filter((event) => event.id)
+      id: cleanText(event?.id, 180),
+      type: cleanText(event?.type || 'update', 80),
+      cardId: cleanText(event?.cardId, 180),
+      label: cleanText(event?.label || 'Collection updated', 500),
+      at: cleanText(event?.at, 60)
+    })).filter((event) => event.id && !seenEventIds.has(event.id) && seenEventIds.add(event.id))
     : [];
 
   return clean;
 }
 
 function normalizePhoto(photo) {
-  const id = String(photo?.id || '');
-  const url = String(photo?.url || '');
+  const id = cleanText(photo?.id, 180);
+  const url = cleanText(photo?.url, 320);
   if (!id || !url.startsWith('/api/photos/')) return null;
   return {
     id,
     url,
-    contentType: String(photo?.contentType || ''),
-    filename: String(photo?.filename || 'Collection photo'),
-    createdAt: String(photo?.createdAt || '')
+    contentType: cleanText(photo?.contentType, 100),
+    filename: cleanText(photo?.filename || 'Collection photo', 180),
+    createdAt: cleanText(photo?.createdAt, 60)
   };
 }
 
 function persistState(options = {}) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(app.state));
+  } catch {
+    showToast('Local storage is full. Export a backup or remove large notes.');
+  }
   if (options.cloud !== false) app.cloudSync?.queue();
+}
+
+function cleanText(value, maxLength) {
+  return String(value || '').slice(0, maxLength);
 }
 
 function updateSyncStatus(status) {
@@ -445,7 +529,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v11' : 'manifest.webmanifest?v=stable-v11';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v14' : 'manifest.webmanifest?v=stable-v14';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -748,7 +832,7 @@ function exportBackup() {
   anchor.href = URL.createObjectURL(blob);
   anchor.download = 'gibly-skylanders-master-vault-backup.json';
   anchor.click();
-  URL.revokeObjectURL(anchor.href);
+  window.setTimeout(() => URL.revokeObjectURL(anchor.href), 1000);
   showToast('Backup exported');
 }
 
@@ -877,7 +961,7 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=stable-v11', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=stable-v14', { updateViaCache: 'none' })
     .then((registration) => {
       offlineRegistration = registration;
       refs.offlineButton.hidden = false;

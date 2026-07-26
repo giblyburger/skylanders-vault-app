@@ -151,15 +151,15 @@ async function handleState(request, env, ownerEmail) {
   if (request.method === 'DELETE') {
     const photoRows = await db.prepare('SELECT object_key FROM vault_photos WHERE owner_email = ?').bind(ownerEmail).all();
     const objectKeys = (photoRows.results || []).map((row) => row.object_key).filter(Boolean);
+    await db.batch([
+      db.prepare('DELETE FROM vault_photos WHERE owner_email = ?').bind(ownerEmail),
+      db.prepare('DELETE FROM vault_states WHERE owner_email = ?').bind(ownerEmail)
+    ]);
     if (env.PHOTOS) {
       for (let index = 0; index < objectKeys.length; index += 500) {
         await env.PHOTOS.delete(objectKeys.slice(index, index + 500));
       }
     }
-    await db.batch([
-      db.prepare('DELETE FROM vault_photos WHERE owner_email = ?').bind(ownerEmail),
-      db.prepare('DELETE FROM vault_states WHERE owner_email = ?').bind(ownerEmail)
-    ]);
     return json({ deleted: true, photosDeleted: objectKeys.length });
   }
 
@@ -242,7 +242,9 @@ async function handlePhoto(request, env, ownerEmail, photoId) {
   if (!id) return json({ error: 'Invalid photo.' }, 400);
   const row = await env.DB.prepare(`SELECT id, object_key, content_type, filename, created_at
     FROM vault_photos WHERE id = ? AND owner_email = ?`).bind(id, ownerEmail).first();
-  if (!row) return json({ error: 'Photo not found.' }, 404);
+  if (!row) return request.method === 'DELETE'
+    ? json({ deleted: true, missing: true })
+    : json({ error: 'Photo not found.' }, 404);
 
   if (request.method === 'GET') {
     const object = await env.PHOTOS.get(row.object_key);
@@ -256,8 +258,8 @@ async function handlePhoto(request, env, ownerEmail, photoId) {
   }
 
   if (request.method === 'DELETE') {
-    await env.PHOTOS.delete(row.object_key);
     await env.DB.prepare('DELETE FROM vault_photos WHERE id = ? AND owner_email = ?').bind(id, ownerEmail).run();
+    await env.PHOTOS.delete(row.object_key);
     return json({ deleted: true });
   }
   return methodNotAllowed(['GET', 'DELETE']);
