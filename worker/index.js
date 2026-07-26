@@ -269,7 +269,9 @@ function cleanId(value) {
 }
 
 function cleanFilename(value) {
-  return String(value || '').replace(/[\\/\u0000-\u001f]/g, '').slice(0, 120);
+  let filename = String(value || '');
+  try { filename = decodeURIComponent(filename); } catch {}
+  return filename.replace(/[\\/\u0000-\u001f]/g, '').slice(0, 120);
 }
 
 function extensionFor(contentType) {

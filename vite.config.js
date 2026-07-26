@@ -1,7 +1,7 @@
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { cloudflare } from '@cloudflare/vite-plugin';
-import { defineConfig, transformWithEsbuild } from 'vite';
+import { defineConfig, transformWithOxc } from 'vite';
 
 const ROOT = process.cwd();
 
@@ -12,7 +12,7 @@ async function transpileForOlderSafari(directory) {
     if (entry.isDirectory()) return transpileForOlderSafari(path);
     if (!entry.name.endsWith('.js')) return;
     const source = await readFile(path, 'utf8');
-    const result = await transformWithEsbuild(source, path, {
+    const result = await transformWithOxc(source, path, {
       loader: 'js',
       format: 'esm',
       target: 'safari12',
@@ -27,6 +27,7 @@ function preserveStaticVault() {
     name: 'preserve-static-vault',
     apply: 'build',
     async closeBundle() {
+      const dist = resolve(ROOT, 'dist');
       const client = resolve(ROOT, 'dist', 'client');
       const server = resolve(ROOT, 'dist', 'server');
       const worker = resolve(ROOT, 'dist', 'gibly_skylanders_master_vault', 'index.js');
@@ -41,6 +42,8 @@ function preserveStaticVault() {
       await transpileForOlderSafari(resolve(client, 'src'));
       await mkdir(server, { recursive: true });
       await cp(worker, resolve(server, 'index.js'));
+      await mkdir(resolve(dist, '.openai'), { recursive: true });
+      await cp(resolve(ROOT, '.openai', 'hosting.json'), resolve(dist, '.openai', 'hosting.json'));
     }
   };
 }

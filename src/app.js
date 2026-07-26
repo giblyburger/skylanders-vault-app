@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v10';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v10';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v10';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v11';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v11';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v11';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -445,7 +445,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v10' : 'manifest.webmanifest?v=stable-v10';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v11' : 'manifest.webmanifest?v=stable-v11';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -729,7 +729,7 @@ function getPlacementsByVillain() {
 function exportBackup() {
   const payload = {
     app: "Gibly's Skylanders Master Vault",
-    version: 6,
+    version: 7,
     exportedAt: new Date().toISOString(),
     dataset: {
       villains: app.villains.length,
@@ -877,7 +877,7 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=stable-v10', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=stable-v11', { updateViaCache: 'none' })
     .then((registration) => {
       offlineRegistration = registration;
       refs.offlineButton.hidden = false;
@@ -962,5 +962,5 @@ function showToast(message) {
 function showFatal(error) {
   document.body.classList.add('load-failed');
   const target = document.querySelector('[data-app-root]');
-  target.innerHTML = '<section class="fatal"><h1>Tracker could not load</h1><p>' + String(error.message || error) + '</p></section>';
+  target.innerHTML = '<section class="fatal"><h1>Tracker could not load</h1><p>' + escapeHtml(String(error.message || error)) + '</p></section>';
 }

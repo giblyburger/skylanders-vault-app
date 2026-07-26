@@ -1,4 +1,4 @@
-const CORE_CACHE_NAME = 'gibly-core-stable-v10';
+const CORE_CACHE_NAME = 'gibly-core-stable-v11';
 const LIBRARY_CACHE_NAME = 'gibly-offline-library-v4';
 const LIBRARY_REVISION = 'complete-card-library-2026-07-25-v4';
 const LIBRARY_STATUS_URL = './offline-library-status.json';
@@ -15,22 +15,22 @@ const CORE_ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './public/manifest-ipad.webmanifest',
-  './src/app.js?v=stable-v10',
+  './src/app.js?v=stable-v11',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=stable-v10',
-  './src/components/FeatureSuite.js?v=stable-v10',
-  './src/components/CloudSync.js?v=stable-v10',
-  './src/styles/gallery.css?v=stable-v10',
-  './src/styles/card-v2.css?v=stable-v10',
-  './src/styles/card-v3.css?v=stable-v10',
-  './src/styles/feature-suite.css?v=stable-v10',
-  './src/styles/theme-warm-v4.css?v=stable-v10',
-  './src/styles/final-complete-v9.css?v=stable-v10',
+  './src/components/MasterCatalog.js?v=stable-v11',
+  './src/components/FeatureSuite.js?v=stable-v11',
+  './src/components/CloudSync.js?v=stable-v11',
+  './src/styles/gallery.css?v=stable-v11',
+  './src/styles/card-v2.css?v=stable-v11',
+  './src/styles/card-v3.css?v=stable-v11',
+  './src/styles/feature-suite.css?v=stable-v11',
+  './src/styles/theme-warm-v4.css?v=stable-v11',
+  './src/styles/final-complete-v9.css?v=stable-v11',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
@@ -86,12 +86,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(networkFirst(event.request, './index.html'));
+    event.respondWith(cacheFirst(event.request, './index.html'));
     return;
   }
 
   if (['.json', '.js', '.css', '.webmanifest'].some((extension) => requestUrl.pathname.endsWith(extension))) {
-    event.respondWith(networkFirst(event.request));
+    event.respondWith(cacheFirst(event.request));
     return;
   }
 
@@ -183,21 +183,14 @@ async function cardArtworkResponse(request) {
   }
 }
 
-async function networkFirst(request, fallback) {
-  const cache = await caches.open(CORE_CACHE_NAME);
-  try {
-    const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
-  } catch {
-    return (await cache.match(request)) || (fallback ? await cache.match(fallback) : null) || Response.error();
-  }
-}
-
-async function cacheFirst(request) {
+async function cacheFirst(request, fallback) {
   const cache = await caches.open(CORE_CACHE_NAME);
   const cached = await cache.match(request);
   if (cached) return cached;
+  if (fallback) {
+    const fallbackResponse = await cache.match(fallback);
+    if (fallbackResponse) return fallbackResponse;
+  }
   try {
     const response = await fetch(request);
     if (response.ok) await cache.put(request, response.clone());
