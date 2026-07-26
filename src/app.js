@@ -2,8 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=card-frame-v2';
-import { createCloudSync } from './components/CloudSync.js?v=card-frame-v2';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=complete-v9';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=complete-v9';
+import { createCloudSync } from './components/CloudSync.js?v=complete-v9';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -47,6 +48,7 @@ const app = {
   },
   editor: null,
   catalogController: null,
+  featureSuite: null,
   cloudSync: null,
   selectedTrapId: '',
   lastPlacement: null,
@@ -72,7 +74,7 @@ const refs = {
   importButton: document.querySelector('[data-import]'),
   importFile: document.querySelector('[data-import-file]'),
   resetButton: document.querySelector('[data-reset]'),
-  displayModeButton: document.querySelector('[data-display-mode]'),
+  displayModeButton: document.querySelector('[data-display-mode-button]'),
   installButton: document.querySelector('[data-install]'),
   offlineButton: document.querySelector('[data-offline-library]'),
   pairingDialog: document.querySelector('[data-pairing-dialog]'),
@@ -83,6 +85,7 @@ const refs = {
   pairingSkip: Array.from(document.querySelectorAll('[data-pairing-skip]')),
   trapDialog: document.querySelector('[data-trap-dialog]'),
   catalogRoot: document.querySelector('[data-master-catalog]'),
+  featureSuiteRoot: document.querySelector('[data-feature-suite]'),
   catalogDialog: document.querySelector('[data-catalog-dialog]'),
   toast: document.querySelector('[data-toast]'),
   boardStage: document.querySelector('[data-board-stage]'),
@@ -118,6 +121,16 @@ async function init() {
       onGameChange: updateGameNavigation,
       onUploadPhoto: (...args) => app.cloudSync?.uploadPhoto(...args),
       onDeletePhoto: (...args) => app.cloudSync?.deletePhoto(...args)
+    });
+    app.featureSuite = createFeatureSuite(refs.featureSuiteRoot, catalog, {
+      getState: () => app.state,
+      openCard: (cardId) => app.catalogController.open(cardId),
+      onToast: showToast,
+      commit: (type, label, cardId = '') => {
+        appendTimeline(type, label, cardId);
+        persistState();
+        updateOverallProgress();
+      }
     });
     window.skylandersScan = {
       identify: (scan) => app.catalogController.identifyScan(scan),
@@ -159,7 +172,7 @@ async function loadJson(url) {
 }
 
 function freshState() {
-  return { version: 6, villains: {}, traps: {}, catalog: {} };
+  return { version: 7, villains: {}, traps: {}, catalog: {}, assemblies: [], timeline: [] };
 }
 
 function loadState() {
@@ -174,7 +187,6 @@ function loadState() {
 function applyFreshStartMigration() {
   if (localStorage.getItem(FRESH_START_KEY)) return;
   PREVIOUS_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
-  localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(FRESH_START_KEY, new Date().toISOString());
 }
 
@@ -216,6 +228,26 @@ function normalizeState(raw) {
       }))
     };
   });
+
+  clean.assemblies = Array.isArray(source.assemblies)
+    ? source.assemblies.slice(0, 200).map((assembly) => ({
+      id: String(assembly?.id || ''),
+      topCardId: String(assembly?.topCardId || ''),
+      bottomCardId: String(assembly?.bottomCardId || ''),
+      name: String(assembly?.name || ''),
+      createdAt: String(assembly?.createdAt || '')
+    })).filter((assembly) => assembly.id && catalogIds.has(assembly.topCardId) && catalogIds.has(assembly.bottomCardId))
+    : [];
+
+  clean.timeline = Array.isArray(source.timeline)
+    ? source.timeline.slice(-300).map((event) => ({
+      id: String(event?.id || ''),
+      type: String(event?.type || 'update'),
+      cardId: String(event?.cardId || ''),
+      label: String(event?.label || 'Collection updated'),
+      at: String(event?.at || '')
+    })).filter((event) => event.id)
+    : [];
 
   return clean;
 }
@@ -293,18 +325,20 @@ function wireEvents() {
   refs.exportButton.innerHTML = actionIcon('export') + '<span>Export</span>';
   refs.importButton.innerHTML = actionIcon('import') + '<span>Import</span>';
   refs.resetButton.innerHTML = actionIcon('reset') + '<span>Reset</span>';
-  refs.displayModeButton.innerHTML = actionIcon('display') + '<span>iPad Display</span>';
+  refs.displayModeButton.innerHTML = actionIcon('display') + '<span>Display: Standard</span>';
   refs.installButton.innerHTML = actionIcon('install') + '<span>Install</span>';
   refs.offlineButton.innerHTML = actionIcon('install') + '<span>Offline Library</span>';
 
-  applyDisplayMode(document.documentElement.dataset.displayMode === 'ipad', { persist: false, updateUrl: false });
+  applyDisplayMode(document.documentElement.dataset.displayMode || 'standard', { persist: false, updateUrl: false });
 
   refs.exportButton.addEventListener('click', exportBackup);
   refs.importButton.addEventListener('click', () => refs.importFile.click());
   refs.importFile.addEventListener('change', importBackup);
   refs.resetButton.addEventListener('click', resetProgress);
   refs.displayModeButton.addEventListener('click', toggleDisplayMode);
+  document.querySelector('[data-display-mode-button-guide]')?.addEventListener('click', toggleDisplayMode);
   refs.offlineButton.addEventListener('click', downloadOfflineLibrary);
+  document.querySelector('[data-offline-library-guide]')?.addEventListener('click', downloadOfflineLibrary);
   refs.syncStatus?.addEventListener('click', () => {
     if (refs.syncStatus.dataset.state === 'locked') openPairingDialog();
   });
@@ -381,41 +415,48 @@ function showPairingError(message) {
 }
 
 function applyInitialDisplayMode() {
-  let enabled = document.documentElement.dataset.displayMode === 'ipad';
+  let mode = document.documentElement.dataset.displayMode || 'standard';
   try {
     const request = new URLSearchParams(window.location.search).get('display');
-    if (request === 'ipad') enabled = true;
-    if (request === 'standard') enabled = false;
+    if (['standard', 'ipad', 'tv'].includes(request)) mode = request;
   } catch (error) {}
-  applyDisplayMode(enabled, { persist: false, updateUrl: false });
+  applyDisplayMode(mode, { persist: false, updateUrl: false });
 }
 
 function toggleDisplayMode() {
-  const enabled = document.documentElement.dataset.displayMode !== 'ipad';
-  applyDisplayMode(enabled, { persist: true, updateUrl: true });
-  if (enabled) setView('catalog');
-  showToast(enabled
-    ? 'iPad Display is on. Use Screen Mirroring to send it to your TV.'
-    : 'Standard layout restored.');
+  const currentMode = document.documentElement.dataset.displayMode || 'standard';
+  const modeOrder = ['standard', 'tv', 'ipad'];
+  const nextMode = modeOrder[(modeOrder.indexOf(currentMode) + 1) % modeOrder.length];
+  applyDisplayMode(nextMode, { persist: true, updateUrl: true });
+  if (nextMode !== 'standard') setView('catalog');
+  showToast(nextMode === 'tv'
+    ? 'TV Display is on. Cards and controls are enlarged for a big screen.'
+    : nextMode === 'ipad'
+      ? 'iPad Display is on. Use Screen Mirroring in Control Center for AirPlay.'
+      : 'Standard layout restored.');
 }
 
-function applyDisplayMode(enabled, options = {}) {
-  const mode = enabled ? 'ipad' : 'standard';
+function applyDisplayMode(requestedMode, options = {}) {
+  const mode = ['standard', 'ipad', 'tv'].includes(requestedMode) ? requestedMode : 'standard';
   document.documentElement.dataset.displayMode = mode;
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
+  if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = enabled ? 'public/manifest-ipad.webmanifest' : 'manifest.webmanifest';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest' : 'manifest.webmanifest';
 
   if (refs.displayModeButton) {
-    refs.displayModeButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-    refs.displayModeButton.classList.toggle('is-active', enabled);
+    const active = mode !== 'standard';
+    refs.displayModeButton.setAttribute('aria-pressed', active ? 'true' : 'false');
+    refs.displayModeButton.setAttribute('aria-label', `Current display mode: ${mode}. Tap to switch.`);
+    refs.displayModeButton.classList.toggle('is-active', active);
+    refs.displayModeButton.dataset.mode = mode;
     const label = refs.displayModeButton.querySelector('span');
-    if (label) label.textContent = enabled ? 'Display On' : 'iPad Display';
+    if (label) label.textContent = `Display: ${mode === 'tv' ? 'TV' : mode === 'ipad' ? 'iPad' : 'Standard'}`;
   }
 
   if (options.persist) {
     try {
-      if (enabled) localStorage.setItem(DISPLAY_MODE_KEY, 'ipad');
+      if (mode !== 'standard') localStorage.setItem(DISPLAY_MODE_KEY, mode);
       else localStorage.removeItem(DISPLAY_MODE_KEY);
     } catch (error) {}
   }
@@ -423,7 +464,7 @@ function applyDisplayMode(enabled, options = {}) {
   if (options.updateUrl && window.history && window.history.replaceState) {
     try {
       const url = new URL(window.location.href);
-      if (enabled) url.searchParams.set('display', 'ipad');
+      if (mode !== 'standard') url.searchParams.set('display', mode);
       else url.searchParams.delete('display');
       window.history.replaceState({}, '', url.pathname + url.search + url.hash);
     } catch (error) {}
@@ -475,6 +516,7 @@ function renderAll() {
   renderSummary(refs.summary, calculateProgress(app));
   updateOverallProgress();
   renderCollectionViews(selectedVillain, selectedTrap, placementsByVillain);
+  app.featureSuite?.render();
 }
 
 function updateOverallProgress() {
@@ -490,10 +532,31 @@ function updateOverallProgress() {
 }
 
 function saveCatalogRecord(cardId, record) {
-  if (!app.catalog?.cards.some((card) => card.id === cardId)) return;
+  const card = app.catalog?.cards.find((item) => item.id === cardId);
+  if (!card) return;
+  const previous = app.state.catalog[cardId] || { copies: [], wishlist: false };
+  const previousCopies = previous.copies?.length || 0;
+  const nextCopies = record.copies?.length || 0;
   app.state.catalog[cardId] = record;
+  if (nextCopies > previousCopies) appendTimeline('copy_added', `${card.name} added to the collection`, cardId);
+  else if (nextCopies < previousCopies) appendTimeline('copy_removed', `${card.name} copy removed`, cardId);
+  else if (Boolean(previous.wishlist) !== Boolean(record.wishlist)) appendTimeline('wishlist', `${card.name} ${record.wishlist ? 'added to' : 'removed from'} the wishlist`, cardId);
+  else appendTimeline('copy_updated', `${card.name} record updated`, cardId);
   persistState();
   updateOverallProgress();
+  app.featureSuite?.render();
+}
+
+function appendTimeline(type, label, cardId = '') {
+  const timeline = Array.isArray(app.state.timeline) ? app.state.timeline : [];
+  timeline.push({
+    id: `event-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    type: String(type || 'update'),
+    cardId: String(cardId || ''),
+    label: String(label || 'Collection updated'),
+    at: new Date().toISOString()
+  });
+  app.state.timeline = timeline.slice(-300);
 }
 
 function renderCollectionViews(selectedVillain, selectedTrap, placementsByVillain) {
@@ -785,7 +848,7 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=card-frame-v2', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=complete-v9', { updateViaCache: 'none' })
     .then((registration) => {
       offlineRegistration = registration;
       refs.offlineButton.hidden = false;

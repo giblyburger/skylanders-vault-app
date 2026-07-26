@@ -34,7 +34,9 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   const cardsById = new Map(catalog.cards.map((card) => [card.id, card]));
   const collectibleCards = catalog.cards.filter(isCollectibleCard);
   const ipadDevice = /iPad/i.test(navigator.userAgent) || document.documentElement.dataset.displayMode === 'ipad';
-  const pageSize = LEGACY_IPAD ? 12 : ipadDevice ? 24 : 72;
+  const pageSize = LEGACY_IPAD ? 12 : ipadDevice ? 18 : 30;
+  let detailCatalog = catalog.details || null;
+  let detailPromise = null;
   const cardNumberById = new Map(collectibleCards.map((card, index) => [card.id, index + 1]));
   const searchIndexById = new Map(collectibleCards.map((card) => {
     const displayName = normalizeText(card.name);
@@ -52,10 +54,11 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     element: '',
     ownership: '',
     sort: 'name',
-    layout: 'photos',
+    layout: document.documentElement.dataset.displayMode === 'tv' ? 'cards' : 'photos',
     limit: pageSize,
     activeCardId: '',
     nfcSelection: '',
+    nfcUnlocked: false,
     status: 'Ready for an ID or saved UID.'
   };
 
@@ -104,14 +107,14 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           </div>
           <p class="eyebrow">The definitive collection companion</p>
           <h2><span>Every Skylander.</span><em>One living vault.</em></h2>
-          <p>A pocket-ready home for every individually released figure, Trap, vehicle, crystal, Portal, item, and variant—built for fast scanning and effortless collecting.</p>
+          <p>A fast, private home for every released figure, Trap, vehicle, crystal, Portal, item, and variant—with clean cards built around the generated artwork.</p>
           <div class="catalog-hero__actions" aria-label="Vault shortcuts">
             <button class="button button--primary" type="button" data-hero-explore>Explore the vault</button>
             <button class="button" type="button" data-hero-scan>Add a figure</button>
           </div>
           <div class="catalog-hero__numbers" aria-label="Master catalog totals">
             <span><strong>${collectibleCards.length}</strong> obtainable pieces</span>
-            <span><strong>${collectibleCards.length}</strong> original card artworks</span>
+            <span><strong>${collectibleCards.length}</strong> generated card images</span>
             <span><strong>${catalog.meta.linkedScanIdentities}</strong> scan links</span>
           </div>
         </div>
@@ -168,8 +171,13 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
           <section class="nfc-studio" aria-labelledby="nfc-studio-title">
             <div class="nfc-studio__intro">
               <p class="eyebrow">Personal tag studio</p>
-              <strong id="nfc-studio-title">Read, write, or rewrite a Vault tag</strong>
-              <span>Links a blank or personal NDEF tag to one saved copy. Original Skylanders tags are read-only here.</span>
+              <strong id="nfc-studio-title">Personal NDEF tag studio</strong>
+              <span>Read, write, or rewrite a compatible blank or personally owned NDEF tag. This never reads or alters an original encrypted Skylanders figure tag.</span>
+            </div>
+            <div class="nfc-safety-gate" data-nfc-gate>
+              <label><input data-nfc-safety-check type="checkbox"> I am using a blank or personally owned writable NDEF tag.</label>
+              <label><span>Type <strong>UNLOCK PERSONAL TAG</strong></span><input data-nfc-safety-phrase autocomplete="off" spellcheck="false" placeholder="Safety phrase"></label>
+              <output data-nfc-gate-status>Writing is locked.</output>
             </div>
             <label class="nfc-studio__select">
               <span>Copy to link</span>
@@ -231,10 +239,14 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       render();
       container.querySelector('.catalog-results-head').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+    let searchTimer = 0;
     search.addEventListener('input', () => {
-      state.search = search.value;
-      state.limit = pageSize;
-      render();
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => {
+        state.search = search.value;
+        state.limit = pageSize;
+        render();
+      }, 120);
     });
 
     ['game', 'category', 'element', 'ownership', 'sort'].forEach((key) => {
@@ -277,16 +289,27 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     const nfcWriteButton = container.querySelector('[data-nfc-write]');
     const nfcCopySelect = container.querySelector('[data-nfc-copy-select]');
     const nfcCapability = container.querySelector('[data-nfc-capability]');
+    const nfcSafetyCheck = container.querySelector('[data-nfc-safety-check]');
+    const nfcSafetyPhrase = container.querySelector('[data-nfc-safety-phrase]');
+    const nfcGateStatus = container.querySelector('[data-nfc-gate-status]');
     const nfcSupported = window.isSecureContext && 'NDEFReader' in window;
+    const updateNfcGate = () => {
+      state.nfcUnlocked = Boolean(nfcSafetyCheck.checked && nfcSafetyPhrase.value.trim().toUpperCase() === 'UNLOCK PERSONAL TAG');
+      nfcGateStatus.textContent = state.nfcUnlocked ? 'Personal-tag writing unlocked for this session.' : 'Writing is locked.';
+      nfcGateStatus.dataset.unlocked = String(state.nfcUnlocked);
+      nfcWriteButton.disabled = !nfcSupported || !state.nfcSelection || !state.nfcUnlocked;
+    };
     nfcButton.disabled = !nfcSupported;
     nfcWriteButton.disabled = true;
     nfcCapability.textContent = nfcSupported
-      ? 'Direct NFC is ready. Choose one of your saved copies to write a personal tag.'
-      : 'Direct NFC requires a compatible Web NFC browser. The manual reader field still works here.';
+      ? 'Personal NDEF tags are supported. Authentic figures still require an external Portal or reader.'
+      : 'Personal-tag NFC requires a compatible Android Web NFC browser. Authentic figures still require an external Portal or reader.';
     nfcButton.addEventListener('click', scanNfc);
+    nfcSafetyCheck.addEventListener('change', updateNfcGate);
+    nfcSafetyPhrase.addEventListener('input', updateNfcGate);
     nfcCopySelect.addEventListener('change', () => {
       state.nfcSelection = nfcCopySelect.value;
-      nfcWriteButton.disabled = !nfcSupported || !state.nfcSelection;
+      updateNfcGate();
     });
     nfcWriteButton.addEventListener('click', () => {
       const [cardId, copyId] = state.nfcSelection.split('::');
@@ -434,10 +457,12 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       ? `<option value="">Choose one of ${choices.length} saved ${choices.length === 1 ? 'copy' : 'copies'}</option>${choices.map((choice) => `<option value="${escapeHtml(choice.value)}" ${choice.value === state.nfcSelection ? 'selected' : ''}>${escapeHtml(choice.label)}</option>`).join('')}`
       : '<option value="">Add a copy to begin</option>';
     select.disabled = choices.length === 0;
-    writeButton.disabled = !nfcSupported || !state.nfcSelection;
+    writeButton.disabled = !nfcSupported || !state.nfcSelection || !state.nfcUnlocked;
     capability.textContent = nfcSupported
       ? choices.length
-        ? 'Ready for compatible writable NDEF tags. Writing replaces the tag’s existing NDEF message.'
+        ? state.nfcUnlocked
+          ? 'Ready for a compatible personal NDEF tag. Writing replaces that tag’s existing NDEF message.'
+          : 'Choose a copy and complete the safety gate before writing.'
         : 'Add a physical copy to any card, then return here to write its personal Vault tag.'
       : 'Direct NFC is unavailable in this browser. You can still scan with an external reader and paste its result above.';
   }
@@ -445,33 +470,110 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
   function cardMarkup(card, record) {
     const owned = record.copies.length;
     const scanned = record.copies.filter((copy) => copy.uid).length;
+    const identity = card.scanIdentities?.[0];
+    const compatibilityEntries = Object.entries(card.compatibility || {});
+    const compatibleGames = compatibilityEntries.filter(([, value]) => String(value).startsWith('yes'));
+    const verification = verificationLabel(card.verification?.status);
+    const cardArt = wallArtworkUrl(card);
+    const cardNumber = cardNumberById.get(card.id) || 0;
+    const releaseLine = [card.game || 'Reference archive', card.releaseYear].filter(Boolean).join(' · ');
+    const seriesLine = [card.scl?.series || card.role, card.edition || 'Standard'].filter(Boolean).join(' · ') || 'Catalog collectible';
+    const marketLoose = card.market?.loose || '—';
+    const marketNew = card.market?.new || '—';
+    const marketDate = formatCompactDate(card.marketAsOf);
+    const compatibilityMarkup = compatibilityEntries.length
+      ? compatibilityEntries.map(([game, value]) => {
+          const supported = String(value).startsWith('yes');
+          return `<span class="catalog-card__compat-chip" data-supported="${supported}" title="${escapeHtml(game)}: ${supported ? 'compatible' : 'not compatible'}">${escapeHtml(GAME_SHORT[game] || game)}</span>`;
+        }).join('')
+      : '<span class="catalog-card__compat-empty">Not separately applicable</span>';
+    const collectionLine = owned
+      ? `${owned} owned${scanned ? ` · ${scanned} scanned` : ''}`
+      : record.wishlist ? 'On wishlist' : 'Not owned';
+
+    return `<article class="catalog-card" data-owned="${owned > 0}" data-wishlist="${record.wishlist}" style="--card-el:${elementColor(card.element)}">
+      <div class="catalog-card__topline" aria-hidden="true">
+        <span>SV-${String(cardNumber).padStart(3, '0')}</span>
+        <span>${escapeHtml(card.element !== 'None' ? card.element : 'Vault item')}</span>
+      </div>
+      <div class="catalog-card__visual">
+        <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
+          <img class="catalog-card__art" loading="lazy" decoding="async" width="320" height="480" src="${escapeHtml(cardArt)}" alt="${escapeHtml(card.name)} generated collector artwork" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
+          <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
+          <span class="catalog-card__label">
+            <span class="catalog-card__label-top"><small>${escapeHtml(releaseLine)}</small><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
+            <strong>${escapeHtml(card.name)}</strong>
+            <span class="catalog-card__label-meta"><span>${escapeHtml(card.role || card.category)}</span><span>${escapeHtml(card.edition || 'Standard')}</span></span>
+          </span>
+          ${owned ? `<span class="catalog-card__owned">Owned · ${owned}</span>` : record.wishlist ? '<span class="catalog-card__owned catalog-card__owned--wanted">Wanted</span>' : ''}
+        </button>
+        <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault"><span aria-hidden="true">+</span></button>
+      </div>
+      <div class="catalog-card__body">
+        <header class="catalog-card__identity">
+          <div>
+            <p>${escapeHtml(releaseLine)}</p>
+            <h3>${escapeHtml(card.name)}</h3>
+          </div>
+          <span class="catalog-card__element">${escapeHtml(card.element !== 'None' ? card.element : 'Item')}</span>
+        </header>
+        <div class="catalog-card__taxonomy">
+          <span>${escapeHtml(card.category)}</span>
+          <span>${escapeHtml(seriesLine)}</span>
+        </div>
+        <section class="catalog-card__spec" aria-label="Figure identity">
+          <div><small>Character ID</small><strong>${escapeHtml(identity?.charId || '—')}</strong></div>
+          <div><small>Variant ID</small><strong>${escapeHtml(identity?.variantId || '—')}</strong></div>
+          <div><small>Product ID</small><strong>${escapeHtml(card.productId || card.id.replace('catalog-', ''))}</strong></div>
+        </section>
+        <section class="catalog-card__compat" aria-label="Game compatibility">
+          <div class="catalog-card__section-head"><span>Compatibility</span><small>${compatibleGames.length ? `${compatibleGames.length} game${compatibleGames.length === 1 ? '' : 's'}` : 'Item record'}</small></div>
+          <div class="catalog-card__compat-list">${compatibilityMarkup}</div>
+        </section>
+        <section class="catalog-card__market" aria-label="Market snapshot">
+          <div><small>Loose</small><strong>${escapeHtml(marketLoose)}</strong></div>
+          <div><small>New</small><strong>${escapeHtml(marketNew)}</strong></div>
+          <div><small>Updated</small><strong>${escapeHtml(marketDate)}</strong></div>
+        </section>
+        <div class="catalog-card__status">
+          <span class="catalog-verification" data-level="${escapeHtml(verification.level)}">${escapeHtml(verification.label)}</span>
+          <span>${escapeHtml(collectionLine)}</span>
+        </div>
+      </div>
+      <div class="catalog-card__actions">
+        <button class="button" type="button" data-card-action="wishlist" data-card-id="${card.id}" aria-pressed="${record.wishlist}">${record.wishlist ? '★ Wanted' : '☆ Wishlist'}</button>
+        <button class="button button--primary" type="button" data-card-action="add" data-card-id="${card.id}">+ Copy</button>
+        <button class="button" type="button" data-card-action="details" data-card-id="${card.id}">All info</button>
+      </div>
+    </article>`;
+  }
+
+  function legacyCardMarkup(card, record) {
+    const owned = record.copies.length;
+    const scanned = record.copies.filter((copy) => copy.uid).length;
     const identity = card.scanIdentities[0];
     const compatibilityGames = Object.entries(card.compatibility || {}).filter(([, value]) => String(value).startsWith('yes')).map(([game]) => GAME_SHORT[game] || game);
     const verification = verificationLabel(card.verification?.status);
     const cardArt = wallArtworkUrl(card);
-    const identityLine = [card.releaseYear, identity?.charId ? `ID ${identity.charId}` : '', identity?.variantId ? `VARIANT ${identity.variantId}` : ''].filter(Boolean).join(' · ');
     const seriesLine = [card.element !== 'None' ? card.element : '', card.scl?.series || card.role, card.edition && card.edition !== 'Standard' ? card.edition : ''].filter(Boolean).join(' · ') || 'Source-backed catalog record';
     const releaseLine = [card.releaseYear, card.game || 'Reference'].filter(Boolean).join(' · ');
     const scanLine = identity ? `${identity.charId} · ${identity.variantId}` : 'No exact NFC identity';
     const worksWithLine = compatibilityGames.length ? compatibilityGames.join(' · ') : 'Not applicable';
     const cardNumber = cardNumberById.get(card.id) || 0;
     return `<article class="catalog-card" data-owned="${owned > 0}" style="--card-el:${elementColor(card.element)}">
-      <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
-        <img class="catalog-card__art" loading="lazy" decoding="async" width="${LEGACY_IPAD ? 384 : 512}" height="${LEGACY_IPAD ? 576 : 768}" src="${escapeHtml(cardArt)}" alt="Original collector-card artwork of ${escapeHtml(card.name)}" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
-        <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
-        <span class="catalog-card__trading-header"><span><small>${escapeHtml(card.game || 'Vault archive')}</small><strong>${escapeHtml(card.name)}</strong></span><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
-        <span class="catalog-card__foil" aria-hidden="true"></span>
-        ${owned ? `<i class="catalog-card__owned">Owned ×${owned}</i>` : ''}
-        <span class="catalog-card__photo-caption">
-          <small>${escapeHtml([card.element !== 'None' ? card.element : '', card.role || card.category, card.game].filter(Boolean).join(' · '))}</small>
-          <strong>${escapeHtml(card.name)}</strong>
-          <em>${escapeHtml(identityLine || card.category)}</em>
-          <b>${compatibilityGames.length ? `Works with: ${escapeHtml(compatibilityGames.join(' · '))}` : escapeHtml(card.category)}</b>
-        </span>
-        <span class="catalog-card__serial">VAULT ${String(cardNumber).padStart(3, '0')} / ${collectibleCards.length}</span>
-        <span class="catalog-card__zoom-hint" aria-hidden="true">View card + info</span>
-      </button>
-      <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault">+</button>
+      <div class="catalog-card__visual">
+        <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
+          <img class="catalog-card__art" loading="lazy" decoding="async" width="320" height="480" src="${escapeHtml(cardArt)}" alt="${escapeHtml(card.name)} generated collector artwork" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
+          <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
+          <span class="catalog-card__label">
+            <span class="catalog-card__label-top"><small>${escapeHtml(card.game || 'Vault archive')}</small><i>${escapeHtml(card.element === 'None' ? 'V' : card.element.slice(0, 1))}</i></span>
+            <strong>${escapeHtml(card.name)}</strong>
+            <span class="catalog-card__label-meta"><span>${escapeHtml(card.role || card.category)}</span><span>${escapeHtml(card.releaseYear || `#${String(cardNumber).padStart(3, '0')}`)}</span></span>
+          </span>
+          ${owned ? `<span class="catalog-card__owned">Owned · ${owned}</span>` : ''}
+        </button>
+        <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault"><span aria-hidden="true">+</span></button>
+      </div>
       <div class="catalog-card__body">
         <div class="catalog-card__kicker"><span class="catalog-card__element">${escapeHtml(card.element !== 'None' ? card.element : 'Item')}</span><span>${escapeHtml(card.category)}</span></div>
         <h3>${escapeHtml(card.name)}</h3>
@@ -522,7 +624,28 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     saveRecord(cardId, record, record.wishlist ? `${card.name} added to wishlist` : `${card.name} removed from wishlist`);
   }
 
-  function open(cardId, options = {}) {
+  async function loadProfileDetails() {
+    if (detailCatalog) return detailCatalog;
+    if (!detailPromise) {
+      detailPromise = fetch('src/data/catalog-details.json', { cache: 'force-cache' })
+        .then((response) => {
+          if (!response.ok) throw new Error('Profile guide data is unavailable.');
+          return response.json();
+        })
+        .then((payload) => {
+          detailCatalog = payload;
+          return payload;
+        })
+        .catch((error) => {
+          detailPromise = null;
+          callbacks.onToast(error.message);
+          return {};
+        });
+    }
+    return detailPromise;
+  }
+
+  async function open(cardId, options = {}) {
     const card = cardsById.get(cardId);
     if (!card) return false;
     state.activeCardId = cardId;
@@ -531,6 +654,12 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
       record.copies.push({ id: makeCopyId(), uid: String(options.uid || ''), condition: 'Not graded', packaging: 'Loose', storage: '', acquired: '', paid: '', notes: '', photos: [] });
       saveRecord(cardId, record);
     }
+    if (card.profileKey && !detailCatalog) {
+      dialog.innerHTML = '<section class="catalog-detail-loading"><span></span><strong>Opening the complete profile…</strong></section>';
+      if (!dialog.open) showVaultDialog(dialog);
+      await loadProfileDetails();
+      if (state.activeCardId !== cardId) return false;
+    }
     renderDialog(card);
     if (!dialog.open) showVaultDialog(dialog);
     return true;
@@ -538,7 +667,7 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
 
   function renderDialog(card) {
     const record = getRecord(card.id);
-    const profile = card.profileKey ? catalog.details[card.profileKey] : null;
+    const profile = card.profileKey ? detailCatalog?.[card.profileKey] : null;
     const copies = record.copies;
     const verification = verificationLabel(card.verification?.status);
     const compatibilityEntries = Object.entries(card.compatibility || {});
@@ -932,7 +1061,13 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     }
   }
 
-  return { render, open, identifyScan, scanNfc, writeNfc, setGameFilter, meta: catalog.meta };
+  function setLayout(layout) {
+    if (!['photos', 'cards'].includes(layout) || state.layout === layout) return;
+    state.layout = layout;
+    render();
+  }
+
+  return { render, open, identifyScan, scanNfc, writeNfc, setGameFilter, setLayout, meta: catalog.meta };
 }
 
 function showVaultDialog(dialog) {
@@ -970,9 +1105,7 @@ function cardArtworkUrl(card) {
 }
 
 function wallArtworkUrl(card) {
-  return LEGACY_IPAD
-    ? `assets/card-art/thumbs/${encodeURIComponent(card.id)}.webp`
-    : cardArtworkUrl(card);
+  return `assets/card-art/thumbs/${encodeURIComponent(card.id)}.webp`;
 }
 
 function photoButton(src, alt, label) {
@@ -1092,11 +1225,16 @@ function gameOrder(game) {
   return index < 0 ? order.length : index;
 }
 
+function formatCompactDate(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[2]}/${match[3]}/${match[1].slice(2)}` : 'No snapshot';
+}
+
 function elementColor(element) {
   return {
-    Magic: '#8f65d8', Water: '#269ee8', Tech: '#e6a13a', Fire: '#ef573f', Air: '#79d8e7',
-    Earth: '#a87a45', Undead: '#9b7bc8', Life: '#60bf58', Dark: '#6b5a9f', Light: '#f1d45d', Kaos: '#c553db', None: '#1787b9'
-  }[element] || '#1787b9';
+    Magic: '#9b63c7', Water: '#a76b83', Tech: '#d29a3d', Fire: '#db573d', Air: '#d7bd74',
+    Earth: '#a36b3f', Undead: '#8e697d', Life: '#6f9e58', Dark: '#67405f', Light: '#e6c967', Kaos: '#bd4e87', None: '#9e7652'
+  }[element] || '#9e7652';
 }
 
 function emptyMarkup() {

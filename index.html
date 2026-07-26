@@ -12,11 +12,11 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="Gibly's Skylanders Master Vault">
     <meta property="og:description" content="640 original collector cards for individually released figures, variants, Traps, vehicles, crystals, items, and Portals.">
-    <meta property="og:image" content="public/social-preview.jpg">
+    <meta property="og:image" content="public/vault-social-v2.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Gibly's Skylanders Master Vault">
     <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
-    <meta name="twitter:image" content="public/social-preview.jpg">
+    <meta name="twitter:image" content="public/vault-social-v2.png">
     <title>Gibly's Skylanders Master Vault</title>
     <link rel="manifest" href="manifest.webmanifest" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
@@ -48,14 +48,25 @@
         }
         var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
         var savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
-        if (displayRequest === 'ipad' || (displayRequest !== 'standard' && (savedDisplay === 'ipad' || ipadDevice))) {
-          document.documentElement.dataset.displayMode = 'ipad';
+        var requestedDisplay = displayRequest === 'tv' || displayRequest === 'ipad' || displayRequest === 'standard'
+          ? displayRequest
+          : '';
+        var preferredDisplay = requestedDisplay || savedDisplay || (ipadDevice ? 'ipad' : 'standard');
+        if (preferredDisplay === 'tv' || preferredDisplay === 'ipad') {
+          document.documentElement.dataset.displayMode = preferredDisplay;
+        }
+        if (preferredDisplay === 'ipad') {
           document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=card-frame-v2">
-    <script type="module" src="src/app.js?v=card-frame-v2"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=complete-v9">
+    <link rel="stylesheet" href="src/styles/card-v2.css?v=complete-v9">
+    <link rel="stylesheet" href="src/styles/card-v3.css?v=complete-v9">
+    <link rel="stylesheet" href="src/styles/feature-suite.css?v=complete-v9">
+    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=complete-v9">
+    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=complete-v9">
+    <script type="module" src="src/app.js?v=complete-v9"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -81,7 +92,7 @@
 
         <div class="header-actions" aria-label="Backup and app actions">
           <button class="sync-status" data-sync-status data-state="connecting" type="button" aria-label="Collection sync status: Connecting"><i></i><span>Connecting</span></button>
-          <button class="button display-mode-button" type="button" data-display-mode aria-pressed="false">iPad Display</button>
+          <button class="button display-mode-button" type="button" data-display-mode-button aria-pressed="false" title="Tap to switch display mode">Display</button>
           <button class="button button--primary" type="button" data-export>Export</button>
           <button class="button" type="button" data-import>Import</button>
           <button class="button button--danger" type="button" data-reset>Reset</button>
@@ -119,14 +130,15 @@
       <section class="placement-dock" data-placement-dock aria-live="polite" hidden></section>
 
       <nav class="view-tabs series-navigation" aria-label="Browse every Skylanders game">
-        <button class="view-tab series-nav__game is-active" type="button" data-game-nav="" aria-pressed="true">All Games</button>
+        <button class="view-tab series-nav__game series-nav__home is-active" type="button" data-game-nav="" aria-pressed="true" aria-label="Open the complete Vault"><span class="series-nav__label-full">All Games</span><span class="series-nav__label-short" aria-hidden="true">Vault</span></button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Spyro's Adventure" aria-pressed="false" style="--series-nav-accent:#8f65d8">Spyro’s Adventure</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Giants" aria-pressed="false" style="--series-nav-accent:#ef573f">Giants</button>
-        <button class="view-tab series-nav__game" type="button" data-game-nav="SWAP Force" aria-pressed="false" style="--series-nav-accent:#79d8e7">SWAP Force</button>
-        <button class="view-tab series-nav__game" type="button" data-game-nav="Trap Team" aria-pressed="false" style="--series-nav-accent:#269ee8">Trap Team</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="SWAP Force" aria-pressed="false" style="--series-nav-accent:#b06a46">SWAP Force</button>
+        <button class="view-tab series-nav__game" type="button" data-game-nav="Trap Team" aria-pressed="false" style="--series-nav-accent:#a76b83">Trap Team</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="SuperChargers" aria-pressed="false" style="--series-nav-accent:#e6a13a">SuperChargers</button>
         <button class="view-tab series-nav__game" type="button" data-game-nav="Imaginators" aria-pressed="false" style="--series-nav-accent:#60bf58">Imaginators</button>
-        <button class="view-tab series-nav__guide" type="button" data-view-tab="reference" aria-selected="false">Series Guide</button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="reference" aria-selected="false" aria-label="Open the Series Guide"><span class="series-nav__label-full">Series Guide</span><span class="series-nav__label-short" aria-hidden="true">Guide</span></button>
+        <button class="view-tab series-nav__guide" type="button" data-view-tab="tools" aria-selected="false" aria-label="Open Vault Tools"><span class="series-nav__label-full">Vault Tools</span><span class="series-nav__label-short" aria-hidden="true">Tools</span></button>
       </nav>
 
       <main>
@@ -177,8 +189,8 @@
             <div class="series-guide__grid">
               <article style="--guide-accent:#8f65d8"><small>2011 · Game 01</small><h3>Spyro’s Adventure</h3><p>The original 32-character roster, Adventure Packs, Magic Items, and first-generation Portal.</p></article>
               <article style="--guide-accent:#ef573f"><small>2012 · Game 02</small><h3>Giants</h3><p>Giants, LightCores, Series 2 figures, and the expanded returning roster.</p></article>
-              <article style="--guide-accent:#79d8e7"><small>2013 · Game 03</small><h3>SWAP Force</h3><p>Swappable characters, new cores, Series 3 figures, and location pieces.</p></article>
-              <article style="--guide-accent:#269ee8"><small>2014 · Game 04</small><h3>Trap Team</h3><p>Trap Masters, Minis, villain Traps, and the Traptanium Portal system.</p></article>
+              <article style="--guide-accent:#b06a46"><small>2013 · Game 03</small><h3>SWAP Force</h3><p>Swappable characters, new cores, Series 3 figures, and location pieces.</p></article>
+              <article style="--guide-accent:#a76b83"><small>2014 · Game 04</small><h3>Trap Team</h3><p>Trap Masters, Minis, villain Traps, and the Traptanium Portal system.</p></article>
               <article style="--guide-accent:#e6a13a"><small>2015 · Game 05</small><h3>SuperChargers</h3><p>Drivers, vehicles, terrain classes, trophies, and SuperCharged pairings.</p></article>
               <article style="--guide-accent:#60bf58"><small>2016 · Game 06</small><h3>Imaginators</h3><p>Senseis, Creation Crystals, Imaginite Chests, and the final main release line.</p></article>
             </div>
@@ -187,10 +199,18 @@
               <ol><li><strong>Find its debut game</strong><span>Shown on every Vault card.</span></li><li><strong>Check “Works with”</strong><span>Exact supported games are listed.</span></li><li><strong>Use the matching Portal</strong><span>Portal requirements remain hardware-specific.</span></li></ol>
             </section>
             <section class="specialized-tools-panel">
+              <div><p class="eyebrow">iPad + TV display</p><h3>Install once, browse offline, mirror when ready.</h3><p>On iPad, open the Vault in Safari and choose Add to Home Screen. Download the Offline Library for all 640 card images, then use the Display button for the iPad or TV layout. Control Center → Screen Mirroring sends the display through AirPlay; collection changes sync again whenever the iPad is online.</p></div>
+              <div><button class="button" type="button" data-display-mode-button-guide>Switch display mode</button><button class="button" type="button" data-offline-library-guide>Download Offline Library</button></div>
+            </section>
+            <section class="specialized-tools-panel">
               <div><p class="eyebrow">Optional specialized tools</p><h3>Trap Team workspace</h3><p>The villain board and physical Trap rack are preserved here without taking over the full-series experience.</p></div>
               <div><button class="button" type="button" data-view-tab="board">Open Villain Vault</button><button class="button" type="button" data-view-tab="rack">Open Trap Rack</button></div>
             </section>
           </section>
+        </section>
+
+        <section class="view" data-view="tools" hidden>
+          <div data-feature-suite></div>
         </section>
       </main>
     </div>

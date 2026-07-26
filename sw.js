@@ -1,6 +1,6 @@
-const CORE_CACHE_NAME = 'gibly-core-card-frame-v2';
-const LIBRARY_CACHE_NAME = 'gibly-offline-library-v1';
-const LIBRARY_REVISION = 'complete-card-library-2026-07-21-v1';
+const CORE_CACHE_NAME = 'gibly-core-complete-v9';
+const LIBRARY_CACHE_NAME = 'gibly-offline-library-v4';
+const LIBRARY_REVISION = 'complete-card-library-2026-07-25-v4';
 const LIBRARY_STATUS_URL = './offline-library-status.json';
 const UNRELEASED_CARD_IDS = new Set([
   'catalog-11513604',
@@ -15,24 +15,29 @@ const CORE_ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './public/manifest-ipad.webmanifest',
-  './src/app.js?v=card-frame-v2',
+  './src/app.js?v=complete-v9',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=card-frame-v2',
-  './src/components/CloudSync.js?v=card-frame-v2',
-  './src/styles/gallery.css?v=card-frame-v2',
+  './src/components/MasterCatalog.js?v=complete-v9',
+  './src/components/FeatureSuite.js?v=complete-v9',
+  './src/components/CloudSync.js?v=complete-v9',
+  './src/styles/gallery.css?v=complete-v9',
+  './src/styles/card-v2.css?v=complete-v9',
+  './src/styles/card-v3.css?v=complete-v9',
+  './src/styles/feature-suite.css?v=complete-v9',
+  './src/styles/theme-warm-v4.css?v=complete-v9',
+  './src/styles/final-complete-v9.css?v=complete-v9',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
   './src/data/master-catalog.json',
-  './public/board-reference.jpg',
   './public/app-icon-512.png',
   './public/apple-touch-icon.png',
-  './public/social-preview.jpg',
+  './public/vault-social-v2.png',
   './public/app-icon.svg'
 ];
 let libraryDownload = null;
