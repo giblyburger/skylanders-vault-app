@@ -1,7 +1,17 @@
 const DEVICE_KEY = 'gibly-skylanders-device-id';
+const NATIVE_SESSION_KEY = 'gibly-skylanders-native-session';
+const NATIVE_APP = ['capacitor:', 'ionic:'].includes(location.protocol)
+  || document.documentElement.dataset.nativeApp === 'ios';
+const CLOUD_ORIGIN = 'https://gibly-skylanders-vault.neumanng98.chatgpt.site';
 const LEGACY_IPAD = document.documentElement.classList.contains('legacy-ipad');
 const ACTIVE_POLL_MS = LEGACY_IPAD ? 6000 : 1800;
 const BACKGROUND_POLL_MS = LEGACY_IPAD ? 30000 : 10000;
+
+export function resolveCloudResourceUrl(path) {
+  const value = String(path || '');
+  if (!NATIVE_APP || !value.startsWith('/api/')) return value;
+  return new URL(value, CLOUD_ORIGIN).href;
+}
 
 export function createCloudSync({ getState, normalizeState, applyState, onStatus, onPairingRequired }) {
   let revision = 0;
@@ -13,13 +23,19 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
   let saveTimer = null;
   let pollTimer = null;
   const clientId = getDeviceId();
+  let nativeSession = readNativeSession();
 
   async function request(path, options = {}) {
-    const response = await fetch(path, {
-      credentials: 'same-origin',
+    const headers = { ...(options.headers || {}) };
+    if (NATIVE_APP) {
+      headers['x-vault-native'] = 'ios';
+      if (nativeSession) headers.authorization = `Bearer ${nativeSession}`;
+    }
+    const response = await fetch(resolveCloudResourceUrl(path), {
+      credentials: NATIVE_APP ? 'omit' : 'same-origin',
       cache: 'no-store',
       ...options,
-      headers: { ...(options.headers || {}) }
+      headers
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -27,6 +43,10 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
       error.status = response.status;
       error.payload = payload;
       if (response.status === 401 && path !== '/api/pair') {
+        if (NATIVE_APP) {
+          nativeSession = '';
+          writeNativeSession('');
+        }
         locked = true;
         onPairingRequired?.();
       }
@@ -206,11 +226,17 @@ export function createCloudSync({ getState, normalizeState, applyState, onStatus
     clearTimeout(saveTimer);
     onStatus({ state: 'connecting', text: 'Pairing' });
     try {
-      await request('/api/pair', {
+      const result = await request('/api/pair', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ code })
       });
+      if (NATIVE_APP) {
+        const token = String(result?.sessionToken || '');
+        if (!/^[a-f0-9]{64}$/i.test(token)) throw new Error('The app did not receive a valid pairing session.');
+        nativeSession = token;
+        writeNativeSession(token);
+      }
     } catch (error) {
       locked = true;
       onStatus({ state: 'locked', text: 'Pair device' });
@@ -365,4 +391,21 @@ function getDeviceId() {
   if (!id) id = globalThis.crypto?.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try { localStorage.setItem(DEVICE_KEY, id); } catch {}
   return id;
+}
+
+function readNativeSession() {
+  if (!NATIVE_APP) return '';
+  try {
+    const value = localStorage.getItem(NATIVE_SESSION_KEY) || '';
+    return /^[a-f0-9]{64}$/i.test(value) ? value : '';
+  } catch {
+    return '';
+  }
+}
+
+function writeNativeSession(value) {
+  try {
+    if (value) localStorage.setItem(NATIVE_SESSION_KEY, value);
+    else localStorage.removeItem(NATIVE_SESSION_KEY);
+  } catch {}
 }

@@ -19,7 +19,7 @@
     <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
     <meta name="twitter:image" content="public/vault-social-v2.png">
     <title>Gibly's Skylanders Master Vault</title>
-    <link rel="manifest" href="manifest.webmanifest?v=stable-v16" data-app-manifest>
+    <link rel="manifest" href="manifest.webmanifest?v=stable-v17" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
     <script>
@@ -40,16 +40,22 @@
         };
       }
       try {
-        var ipadDevice = /iPad/.test(navigator.userAgent)
+        var nativeIosApp = location.protocol === 'capacitor:' || location.protocol === 'ionic:';
+        var ipadDevice = nativeIosApp || /iPad/.test(navigator.userAgent)
           || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         var ipadOs = navigator.userAgent.match(/OS (\d+)[_\.]/);
         if (ipadDevice) document.documentElement.classList.add('ipad-device');
+        if (nativeIosApp) {
+          document.documentElement.dataset.nativeApp = 'ios';
+          document.documentElement.classList.add('native-ios-app');
+        }
         if (ipadDevice && (!ipadOs || Number(ipadOs[1]) <= 15)) {
           document.documentElement.classList.add('legacy-ipad');
         }
         var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
         var appRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('app') : '';
-        var installedApp = appRequest === '1'
+        var installedApp = nativeIosApp
+          || appRequest === '1'
           || navigator.standalone === true
           || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
           || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
@@ -66,17 +72,17 @@
           document.documentElement.dataset.displayMode = preferredDisplay;
         }
         if (preferredDisplay === 'ipad') {
-          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v16';
+          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v17';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v16">
-    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v16">
-    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v16">
-    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v16">
-    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v16">
-    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v16">
-    <script type="module" src="src/app.js?v=stable-v16"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v17">
+    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v17">
+    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v17">
+    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v17">
+    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v17">
+    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v17">
+    <script type="module" src="src/app.js?v=stable-v17"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>

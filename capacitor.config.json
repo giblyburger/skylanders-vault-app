@@ -1,0 +1,13 @@
+{
+  "appId": "com.gibly.skylandersvault",
+  "appName": "Skylanders Vault",
+  "webDir": "dist/client",
+  "backgroundColor": "#000000",
+  "ios": {
+    "contentInset": "always",
+    "preferredContentMode": "mobile"
+  },
+  "server": {
+    "iosScheme": "capacitor"
+  }
+}

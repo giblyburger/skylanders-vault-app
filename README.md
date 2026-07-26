@@ -1,37 +1,45 @@
-# Gibly's Trap Team Collection Tracker
+# Skylanders Vault
 
-A polished mobile-first static PWA for tracking a complete Skylanders: Trap Team villain and Traptanium Trap collection.
+A complete, offline-first Skylanders collection app covering every main series from Spyro's Adventure through Imaginators.
 
-## Dataset
+## What is included
 
-- 46 trappable villains in `src/data/villains.json`.
-- 60 core physical Trap releases in `src/data/traps.json`.
-- 6 separately listed factory-loaded villain-variant Traps in `src/data/traps.json`.
-- Element color metadata in `src/data/elements.json`.
-- The uploaded board photo is preserved at `public/board-reference.jpg`.
+- 640 obtainable pieces with one consistently framed original card artwork per item.
+- Figures, variants, Traps, vehicles, Creation Crystals, Portals, Magic Items, Adventure pieces, and accessories.
+- Separate reference treatment for unreleased, technical-only, digital, pack, and villain records.
+- Search, collection quantities, condition, packaging, storage, notes, purchase details, personal photos, compatibility, and exact documented scan IDs.
+- Local-first use with optional private cloud sync across paired devices.
+- Standard, iPad, and TV/AirPlay display layouts.
 
-## Run Locally
+## iPad app
 
-Serve the folder with any static file server, then open the local URL in a browser.
+The native iOS project lives in `ios/App` and uses Capacitor 6 so it can run on iOS 13 or newer, including an iPad Mini 4 on iOS 15.
+
+The GitHub workflow builds an unsigned IPA for jailbroken devices. Tagged builds are attached to a GitHub Release as:
+
+`Skylanders-Vault-unsigned.ipa`
+
+The complete interface, catalog, and card-art library are bundled into the IPA. Internet access is only needed for cloud sync, pairing, personal-photo backup, and future updates.
+
+## Local development
 
 ```bash
-python -m http.server 5173
+pnpm install
+pnpm run build
+pnpm run audit
 ```
 
-Then visit `http://localhost:5173`.
+Serve `dist/client` with any static web server for the browser edition.
 
-## Deploy
+To refresh the native iOS web bundle on macOS:
 
-This app has no build step. Deploy the repository root as a static site.
+```bash
+pnpm run ios:sync
+```
 
-- Vercel: import the project and keep the build command empty.
-- GitHub Pages: the included workflow publishes the repository root from `main`.
+## Publishing
 
-## Features
-
-- Villain status tracking: Not Found, Defeated, Trapped, Evolved.
-- Trap ownership, quantity, matching element, mold, official name, edition, variant group, and assigned villain.
-- Search and filters for element, villain, Trap mold, and variant group.
-- Local auto-save with JSON export/import backup.
-- Installable PWA shell with offline asset caching.
-- Mobile-first board, rack, and reference photo views.
+- `.github/workflows/pages.yml` builds and publishes the browser edition to GitHub Pages.
+- `.github/workflows/build-ios-ipa.yml` builds the unsigned IPA on a macOS runner.
+- A tag named `ios-v*` publishes the IPA as a permanent GitHub Release download.
+- `.openai/hosting.json` configures the private cloud-backed Sites deployment.

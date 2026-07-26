@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v16';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v16';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v16';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v17';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v17';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v17';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -532,7 +532,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v16' : 'manifest.webmanifest?v=stable-v16';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v17' : 'manifest.webmanifest?v=stable-v17';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -975,8 +975,8 @@ function registerServiceWorker() {
   });
   const registrationTask = INSTALLED_APP
     ? navigator.serviceWorker.getRegistration()
-        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v16', { updateViaCache: 'none' }))
-    : navigator.serviceWorker.register('sw.js?v=stable-v16', { updateViaCache: 'none' });
+        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v17', { updateViaCache: 'none' }))
+    : navigator.serviceWorker.register('sw.js?v=stable-v17', { updateViaCache: 'none' });
   registrationTask
     .then((registration) => {
       offlineRegistration = registration;

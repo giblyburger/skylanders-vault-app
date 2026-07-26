@@ -22,26 +22,43 @@ const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const SESSION_COOKIE = 'gibly_vault_session';
 const SESSION_MAX_AGE = 365 * 24 * 60 * 60;
+const NATIVE_ORIGINS = new Set(['capacitor://localhost', 'ionic://localhost']);
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+    if (request.method === 'OPTIONS') return corsResponse(request, new Response(null, { status: 204 }));
 
+    let response;
     try {
-      if (url.pathname === '/api/pair') return handlePairing(request, env, url);
-      const ownerEmail = await authenticatedEmail(request, url, env);
-      if (!ownerEmail) return json({ error: 'Pair this device to sync your private vault.' }, 401);
-      if (!env.DB) return json({ error: 'Cloud sync is not configured yet.' }, 503);
-
-      await ensureSchema(env.DB);
-      if (url.pathname === '/api/state') return handleState(request, env, ownerEmail);
-      if (url.pathname === '/api/photos' && request.method === 'POST') return uploadPhoto(request, env, ownerEmail, url);
-      if (url.pathname.startsWith('/api/photos/')) return handlePhoto(request, env, ownerEmail, url.pathname.slice('/api/photos/'.length));
-      return json({ error: 'Not found.' }, 404);
+      if (url.pathname === '/api/pair') {
+        response = await handlePairing(request, env, url);
+      } else if (url.pathname.startsWith('/api/photos/') && request.method === 'GET') {
+        if (!env.DB || !env.PHOTOS) {
+          response = json({ error: 'Photo storage is not configured yet.' }, 503);
+        } else {
+          await ensureSchema(env.DB);
+          response = await readPhoto(env, url.pathname.slice('/api/photos/'.length));
+        }
+      } else {
+        const ownerEmail = await authenticatedEmail(request, url, env);
+        if (!ownerEmail) {
+          response = json({ error: 'Pair this device to sync your private vault.' }, 401);
+        } else if (!env.DB) {
+          response = json({ error: 'Cloud sync is not configured yet.' }, 503);
+        } else {
+          await ensureSchema(env.DB);
+          if (url.pathname === '/api/state') response = await handleState(request, env, ownerEmail);
+          else if (url.pathname === '/api/photos' && request.method === 'POST') response = await uploadPhoto(request, env, ownerEmail, url);
+          else if (url.pathname.startsWith('/api/photos/')) response = await handlePhoto(request, env, ownerEmail, url.pathname.slice('/api/photos/'.length));
+          else response = json({ error: 'Not found.' }, 404);
+        }
+      }
     } catch (error) {
-      return json({ error: error instanceof Error ? error.message : 'Unexpected server error.' }, 500);
+      response = json({ error: error instanceof Error ? error.message : 'Unexpected server error.' }, 500);
     }
+    return corsResponse(request, response);
   }
 };
 
@@ -50,6 +67,7 @@ async function authenticatedEmail(request, url, env) {
   const owner = String(env.VAULT_OWNER_EMAIL || '').trim().toLowerCase();
   if (forwarded && (!owner || forwarded === owner)) return forwarded;
   if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return 'local-preview@skylanders.app';
+  if (await hasValidNativeSession(request, env)) return owner;
   if (await hasValidPairingCookie(request, env)) return owner;
   return '';
 }
@@ -79,7 +97,8 @@ async function handlePairing(request, env, url) {
   }
 
   const token = await pairingSessionToken(env.VAULT_PAIRING_CODE);
-  return json({ paired: true }, 200, {
+  const nativeClient = request.headers.get('x-vault-native') === 'ios';
+  return json({ paired: true, ...(nativeClient ? { sessionToken: token } : {}) }, 200, {
     'set-cookie': `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE}${url.protocol === 'https:' ? '; Secure' : ''}`
   });
 }
@@ -88,6 +107,15 @@ async function hasValidPairingCookie(request, env) {
   if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) return false;
   const cookies = parseCookies(request.headers.get('cookie') || '');
   const supplied = cookies.get(SESSION_COOKIE) || '';
+  if (!supplied) return false;
+  const expected = await pairingSessionToken(env.VAULT_PAIRING_CODE);
+  return timingSafeEqual(supplied, expected);
+}
+
+async function hasValidNativeSession(request, env) {
+  if (!env.VAULT_PAIRING_CODE || !env.VAULT_OWNER_EMAIL) return false;
+  const authorization = request.headers.get('authorization') || '';
+  const supplied = authorization.match(/^Bearer\s+([a-f0-9]{64})$/i)?.[1] || '';
   if (!supplied) return false;
   const expected = await pairingSessionToken(env.VAULT_PAIRING_CODE);
   return timingSafeEqual(supplied, expected);
@@ -240,29 +268,35 @@ async function handlePhoto(request, env, ownerEmail, photoId) {
   if (!env.PHOTOS) return json({ error: 'Photo storage is not configured yet.' }, 503);
   const id = cleanId(photoId);
   if (!id) return json({ error: 'Invalid photo.' }, 400);
-  const row = await env.DB.prepare(`SELECT id, object_key, content_type, filename, created_at
-    FROM vault_photos WHERE id = ? AND owner_email = ?`).bind(id, ownerEmail).first();
+  const row = await env.DB.prepare('SELECT id, object_key FROM vault_photos WHERE id = ? AND owner_email = ?')
+    .bind(id, ownerEmail).first();
   if (!row) return request.method === 'DELETE'
     ? json({ deleted: true, missing: true })
     : json({ error: 'Photo not found.' }, 404);
-
-  if (request.method === 'GET') {
-    const object = await env.PHOTOS.get(row.object_key);
-    if (!object) return json({ error: 'Photo file not found.' }, 404);
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set('content-type', row.content_type);
-    headers.set('cache-control', 'private, max-age=300');
-    headers.set('content-disposition', `inline; filename="${row.filename.replace(/["\\]/g, '')}"`);
-    return new Response(object.body, { headers });
-  }
 
   if (request.method === 'DELETE') {
     await env.DB.prepare('DELETE FROM vault_photos WHERE id = ? AND owner_email = ?').bind(id, ownerEmail).run();
     await env.PHOTOS.delete(row.object_key);
     return json({ deleted: true });
   }
-  return methodNotAllowed(['GET', 'DELETE']);
+  return methodNotAllowed(['DELETE']);
+}
+
+async function readPhoto(env, photoId) {
+  const id = cleanId(photoId);
+  if (!id) return json({ error: 'Invalid photo.' }, 400);
+  const row = await env.DB.prepare(`SELECT object_key, content_type, filename
+    FROM vault_photos WHERE id = ?`).bind(id).first();
+  if (!row) return json({ error: 'Photo not found.' }, 404);
+  const object = await env.PHOTOS.get(row.object_key);
+  if (!object) return json({ error: 'Photo file not found.' }, 404);
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set('content-type', row.content_type);
+  headers.set('cache-control', 'private, max-age=300');
+  headers.set('content-disposition', `inline; filename="${row.filename.replace(/["\\]/g, '')}"`);
+  headers.set('x-content-type-options', 'nosniff');
+  return new Response(object.body, { headers });
 }
 
 function cleanId(value) {
@@ -297,6 +331,23 @@ function json(value, status = 200, extraHeaders = {}) {
   Object.entries(extraHeaders).forEach(([key, value]) => headers.set(key, value));
   return new Response(JSON.stringify(value), {
     status,
+    headers
+  });
+}
+
+function corsResponse(request, response) {
+  const origin = request.headers.get('origin') || '';
+  if (!NATIVE_ORIGINS.has(origin)) return response;
+  const headers = new Headers(response.headers);
+  headers.set('access-control-allow-origin', origin);
+  headers.set('access-control-allow-credentials', 'true');
+  headers.set('access-control-allow-methods', 'GET, PUT, POST, DELETE, OPTIONS');
+  headers.set('access-control-allow-headers', 'authorization, content-type, x-photo-filename, x-vault-native');
+  headers.set('access-control-max-age', '86400');
+  headers.append('vary', 'Origin');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
     headers
   });
 }

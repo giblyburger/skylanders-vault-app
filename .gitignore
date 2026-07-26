@@ -6,3 +6,8 @@ dist/
 .dev.vars*
 .env*
 work/
+ios/App/App/public/
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
+ios/App/Podfile.lock

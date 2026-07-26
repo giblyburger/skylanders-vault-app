@@ -1,4 +1,4 @@
-name: Deploy static site to Pages
+name: Publish Vault website
 
 on:
   push:
@@ -23,12 +23,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build complete offline app
+        run: pnpm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist/client
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
