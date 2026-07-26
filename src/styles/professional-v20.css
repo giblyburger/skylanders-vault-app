@@ -302,6 +302,108 @@ a:focus-visible {
   background: linear-gradient(155deg, #15141b 0%, #0c0b10 48%, #050507 100%);
 }
 
+.catalog-results-head [data-catalog-result-count] {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 5px 10px;
+  margin: 0;
+}
+
+.catalog-results-head [data-catalog-result-count] > span {
+  grid-column: 1 / -1;
+  color: #a99acb;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.catalog-results-head [data-catalog-result-count] > strong {
+  color: #f5f3f7;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.catalog-results-head [data-catalog-result-count] > small {
+  color: #8f8c98;
+  font-size: 0.72rem;
+}
+
+.catalog-grid__chapter {
+  position: relative;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  margin: 22px 0 1px;
+  padding: 0 2px 12px 15px;
+  border-bottom: 1px solid rgba(229, 224, 238, 0.12);
+  text-align: left;
+}
+
+.catalog-grid__chapter:first-child {
+  margin-top: 2px;
+}
+
+.catalog-grid__chapter::before {
+  position: absolute;
+  top: 2px;
+  bottom: 12px;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--chapter-accent, #a98af5);
+  box-shadow: 0 0 14px var(--chapter-accent, #a98af5);
+  content: "";
+  opacity: 0.9;
+}
+
+.catalog-grid__chapter > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.catalog-grid__chapter span {
+  overflow: hidden;
+  color: #9995a2;
+  font-size: 0.6rem;
+  font-weight: 760;
+  letter-spacing: 0.09em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.catalog-grid__chapter strong {
+  overflow: hidden;
+  color: #f4f1f6;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.2vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-grid__chapter small {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(229, 224, 238, 0.1);
+  border-radius: 999px;
+  color: #aaa6b1;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.63rem;
+  font-weight: 760;
+}
+
 .catalog-card__topline {
   background: rgba(7, 7, 10, 0.9);
 }
@@ -316,6 +418,46 @@ a:focus-visible {
 .catalog-grid[data-layout="photos"] .catalog-card:hover {
   border-color: rgba(192, 171, 250, 0.34);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.54), 0 0 26px rgba(169, 138, 245, 0.08);
+}
+
+.catalog-grid[data-layout="photos"] .catalog-card--wall .catalog-card__art {
+  filter: none !important;
+}
+
+.catalog-grid[data-layout="photos"] .catalog-card--wall .catalog-card__photo::before {
+  background:
+    linear-gradient(180deg, rgba(4, 4, 7, 0.7) 0%, rgba(4, 4, 7, 0.15) 15%, transparent 30%, transparent 65%, rgba(5, 5, 8, 0.35) 73%, rgba(5, 5, 8, 0.94) 100%),
+    radial-gradient(circle at 50% 42%, transparent 0 48%, rgba(3, 3, 5, 0.22) 82%, rgba(3, 3, 5, 0.46) 100%);
+}
+
+.catalog-card__wall-head {
+  color: #f7f4f8;
+}
+
+.catalog-card__wall-head em {
+  color: #bbb5c1;
+}
+
+.catalog-card__wall-info {
+  border-color: rgba(229, 224, 238, 0.12);
+  border-top-color: rgba(255, 255, 255, 0.21);
+  color: #f4f1f6;
+  background: linear-gradient(145deg, rgba(17, 16, 22, 0.97), rgba(6, 6, 9, 0.98));
+  box-shadow: inset 2px 0 0 var(--card-el), 0 8px 20px rgba(0, 0, 0, 0.36);
+}
+
+.catalog-card__wall-type strong {
+  color: #f3f0f5;
+}
+
+.catalog-card__wall-type em,
+.catalog-card__wall-rules small,
+.catalog-card__wall-footer {
+  color: #918d99;
+}
+
+.catalog-card__wall-rules b {
+  color: #cbc6d0;
 }
 
 .catalog-card__photo-caption small,
@@ -404,6 +546,22 @@ a:focus-visible {
   box-shadow: 0 0 18px rgba(143, 203, 214, 0.4);
 }
 
+html.legacy-ipad .app-header,
+html.legacy-ipad .series-navigation,
+html.legacy-ipad .tools-tabs {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.legacy-ipad .series-navigation,
+html.legacy-ipad .tools-tabs {
+  background: #08080c;
+}
+
+html.legacy-ipad body::before {
+  animation: none;
+}
+
 @media (max-width: 1200px) {
   .series-navigation {
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -468,6 +626,14 @@ a:focus-visible {
   .catalog-directory__chip {
     flex: 1 1 132px;
     min-width: 0;
+  }
+
+  .catalog-results-head [data-catalog-result-count] {
+    grid-template-columns: auto 1fr;
+  }
+
+  .catalog-grid__chapter {
+    margin-top: 16px;
   }
 }
 

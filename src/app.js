@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v20';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v20';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v20';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v21';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v21';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v21';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -12,7 +12,7 @@ const STORAGE_KEY = 'gibly-skylanders-master-v5';
 const DISPLAY_MODE_KEY = 'gibly-skylanders-display-mode';
 const FRESH_START_KEY = 'gibly-skylanders-fresh-start-2026-07-21';
 const UPDATE_CHECK_KEY = 'gibly-skylanders-update-check-v1';
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 const RELEASE_ENDPOINT = 'https://api.github.com/repos/giblyburger/skylanders-vault-app/releases/latest';
 const UPDATE_CHECK_INTERVAL = 24 * 60 * 60 * 1000;
 const PREVIOUS_STORAGE_KEYS = [
@@ -468,7 +468,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v20' : 'manifest.webmanifest?v=stable-v20';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v21' : 'manifest.webmanifest?v=stable-v21';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -911,8 +911,8 @@ function registerServiceWorker() {
   });
   const registrationTask = INSTALLED_APP
     ? navigator.serviceWorker.getRegistration()
-        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v20', { updateViaCache: 'none' }))
-    : navigator.serviceWorker.register('sw.js?v=stable-v20', { updateViaCache: 'none' });
+        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v21', { updateViaCache: 'none' }))
+    : navigator.serviceWorker.register('sw.js?v=stable-v21', { updateViaCache: 'none' });
   registrationTask
     .then((registration) => {
       offlineRegistration = registration;

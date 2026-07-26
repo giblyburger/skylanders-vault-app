@@ -1,5 +1,5 @@
 import { escapeHtml, normalizeText } from './helpers.js?v=animation-2';
-import { resolveCloudResourceUrl } from './CloudSync.js?v=stable-v20';
+import { resolveCloudResourceUrl } from './CloudSync.js?v=stable-v21';
 
 const GAME_SHORT = {
   "Spyro's Adventure": 'SSA',
@@ -412,11 +412,31 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     filtered.sort((left, right) => (query ? left.searchRank - right.searchRank : 0) || activeSorter(left, right));
 
     const visible = filtered.slice(0, state.limit);
-    container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} individual cards · showing ${visible.length}`;
+    const scopeLabel = state.game || state.category || state.element || 'Complete six-game vault';
+    container.querySelector('[data-catalog-result-count]').innerHTML = `
+      <span>${escapeHtml(scopeLabel)}</span>
+      <strong>${filtered.length}</strong>
+      <small>individual ${filtered.length === 1 ? 'piece' : 'pieces'} · showing ${visible.length}</small>`;
     const grid = container.querySelector('[data-catalog-grid]');
     grid.dataset.layout = state.layout;
     const renderCard = state.layout === 'photos' ? wallCardMarkup : cardMarkup;
-    grid.innerHTML = visible.map(({ card, record }) => renderCard(card, record)).join('') || emptyMarkup();
+    const showChapters = state.sort === 'series order' && !query;
+    const chapterCounts = new Map();
+    if (showChapters) {
+      filtered.forEach(({ card }) => {
+        const key = chapterKey(card, state);
+        chapterCounts.set(key, (chapterCounts.get(key) || 0) + 1);
+      });
+    }
+    let previousChapter = '';
+    grid.innerHTML = visible.map(({ card, record }) => {
+      const key = showChapters ? chapterKey(card, state) : '';
+      const chapter = key && key !== previousChapter
+        ? chapterMarkup(card, state, chapterCounts.get(key) || 0)
+        : '';
+      previousChapter = key;
+      return chapter + renderCard(card, record);
+    }).join('') || emptyMarkup();
     container.querySelectorAll('[data-catalog-layout]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.catalogLayout === state.layout));
     });
@@ -1166,6 +1186,24 @@ function closeVaultDialog(dialog) {
 function selectMarkup(label, key, options) {
   const values = options.map((option) => typeof option === 'string' ? { value: normalizeText(option), label: option } : option);
   return `<label><span>${escapeHtml(label)}</span><select data-catalog-${key}><option value="">All ${escapeHtml(label.toLowerCase())}</option>${values.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}</select></label>`;
+}
+
+function chapterKey(card, state) {
+  if (state.game && !state.category) return card.category;
+  if (state.category && !state.game) return card.game;
+  return `${card.game || 'Reference'}::${card.category}`;
+}
+
+function chapterMarkup(card, state, count) {
+  const game = card.game || 'Reference archive';
+  const gameLine = GAME_LINES.find((line) => line.name === card.game);
+  const title = state.category && !state.game ? game : card.category;
+  const context = [gameLine?.year || card.releaseYear, game].filter(Boolean).join(' · ');
+  const accent = gameLine?.accent || elementColor(card.element);
+  return `<header class="catalog-grid__chapter" style="--chapter-accent:${escapeHtml(accent)}">
+    <div><span>${escapeHtml(context)}</span><strong>${escapeHtml(title)}</strong></div>
+    <small>${count} ${count === 1 ? 'piece' : 'pieces'}</small>
+  </header>`;
 }
 
 function unique(values, rank = () => 0) {

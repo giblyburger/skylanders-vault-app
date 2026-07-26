@@ -17,7 +17,7 @@ function pngDimensions(buffer) {
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
-const [packageJson, capacitorConfig, projectFile, infoPlist, workflow, appSource, cloudSync, masterCatalog, serviceWorker, indexHtml, workerSource, galleryCss, professionalCss] = await Promise.all([
+const [packageJson, capacitorConfig, projectFile, infoPlist, workflow, appSource, cloudSync, masterCatalog, serviceWorker, indexHtml, workerSource, galleryCss, finalCss, professionalCss] = await Promise.all([
   read('package.json').then(JSON.parse),
   read('capacitor.config.json').then(JSON.parse),
   read('ios/App/App.xcodeproj/project.pbxproj'),
@@ -30,6 +30,7 @@ const [packageJson, capacitorConfig, projectFile, infoPlist, workflow, appSource
   read('index.html'),
   read('worker/index.js'),
   read('src/styles/gallery.css'),
+  read('src/styles/final-complete-v9.css'),
   read('src/styles/professional-v20.css')
 ]);
 
@@ -42,18 +43,18 @@ check(capacitorConfig.plugins?.CapacitorHttp?.enabled === true, 'Native HTTP sup
 check(capacitorConfig.plugins?.CapacitorCookies?.enabled === true, 'Native cookie support must remain enabled for existing authorized sessions.');
 check((projectFile.match(/IPHONEOS_DEPLOYMENT_TARGET = 13\.0;/g) || []).length >= 2, 'iOS 13 deployment support is missing.');
 check((projectFile.match(/PRODUCT_BUNDLE_IDENTIFIER = com\.gibly\.skylandersvault;/g) || []).length === 2, 'Native bundle ID is not applied to both build configurations.');
-check((projectFile.match(/MARKETING_VERSION = 1\.2\.0;/g) || []).length === 2, 'Native marketing version must match app version 1.2.0.');
-check((projectFile.match(/CURRENT_PROJECT_VERSION = 3;/g) || []).length === 2, 'Native build number must be 3.');
+check((projectFile.match(/MARKETING_VERSION = 1\.3\.0;/g) || []).length === 2, 'Native marketing version must match app version 1.3.0.');
+check((projectFile.match(/CURRENT_PROJECT_VERSION = 4;/g) || []).length === 2, 'Native build number must be 4.');
 check(infoPlist.includes('<string>Skylanders Vault</string>'), 'Native display name is missing.');
 check(infoPlist.includes('<key>NSCameraUsageDescription</key>'), 'Camera permission text is missing.');
 check(infoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>'), 'Photo-library permission text is missing.');
 check(infoPlist.includes('<key>WKAppBoundDomains</key>') && infoPlist.includes('gibly-skylanders-vault.neumanng98.chatgpt.site'), 'The private sync host is missing from the iOS app-bound domains.');
 check(workflow.includes('CODE_SIGNING_ALLOWED=NO'), 'Unsigned IPA workflow must disable code signing.');
 check(workflow.includes('Skylanders-Vault-unsigned.ipa'), 'IPA workflow output name is missing.');
-check(appSource.includes("const APP_VERSION = '1.2.0';"), 'In-app update version does not match the native release.');
+check(appSource.includes("const APP_VERSION = '1.3.0';"), 'In-app update version does not match the native release.');
 check(appSource.includes('releases/latest') && appSource.includes('Skylanders-Vault-unsigned.ipa'), 'Verified release update checking is missing.');
 check(indexHtml.includes('data-app-update-panel') && indexHtml.includes('data-download-app-update'), 'The in-app update controls are missing.');
-check(serviceWorker.includes("gibly-core-stable-v20"), 'The update release must use the stable-v20 cache.');
+check(serviceWorker.includes("gibly-core-stable-v21"), 'The update release must use the stable-v21 cache.');
 check(serviceWorker.includes('requestUrl.origin !== self.location.origin'), 'External release checks must bypass the offline asset cache.');
 check(cloudSync.includes("['capacitor:', 'ionic:'].includes(location.protocol)"), 'Native runtime detection is missing.');
 check(cloudSync.includes('Bearer ${nativeSession}'), 'Native authenticated sync is missing.');
@@ -61,7 +62,10 @@ check(masterCatalog.includes('resolveCloudResourceUrl(photo.url)'), 'Native pers
 check(!indexHtml.includes('data-pairing') && !cloudSync.includes('/api/pair'), 'The pairing-code interface or request path is still present.');
 check(!workerSource.includes("url.pathname === '/api/pair'"), 'The removed pairing endpoint is still routed.');
 check(masterCatalog.includes("sort: 'series order'") && masterCatalog.includes('compareCatalogCards'), 'Canonical series ordering is missing.');
+check(masterCatalog.includes('catalog-grid__chapter') && masterCatalog.includes('chapterKey(card, state)'), 'Visible full-series catalog chapters are missing.');
 check(professionalCss.includes('grid-template-columns: repeat(9') && professionalCss.includes('.series-nav__game:not(.series-nav__home)'), 'The complete non-scrolling series menu is missing.');
+check(finalCss.includes('filter: none !important;') && !finalCss.includes('grayscale(0.42)'), 'Card artwork is still being desaturated.');
+check(professionalCss.includes('html.legacy-ipad .app-header') && professionalCss.includes('backdrop-filter: none !important'), 'Legacy iPad performance fallbacks are missing.');
 check(galleryCss.includes('font-family: "Vault Manrope"') && galleryCss.includes('font-family: "Vault Space Grotesk"'), 'Bundled custom fonts are not registered.');
 
 const iconBuffer = await readFile(resolve(root, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'));

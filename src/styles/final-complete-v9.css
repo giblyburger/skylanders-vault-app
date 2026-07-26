@@ -224,7 +224,7 @@ html[data-app-mode="installed"] [data-offline-library] {
 }
 
 .catalog-grid[data-layout="photos"] .catalog-card--wall .catalog-card__art {
-  filter: grayscale(0.42) sepia(0.13) saturate(0.68) brightness(0.86) contrast(1.12) !important;
+  filter: none !important;
 }
 
 .catalog-grid[data-layout="photos"] .catalog-card__body,
