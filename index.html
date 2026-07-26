@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Gibly's Vault">
     <meta name="mobile-web-app-capable" content="yes">
@@ -18,7 +19,7 @@
     <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
     <meta name="twitter:image" content="public/vault-social-v2.png">
     <title>Gibly's Skylanders Master Vault</title>
-    <link rel="manifest" href="manifest.webmanifest?v=stable-v14" data-app-manifest>
+    <link rel="manifest" href="manifest.webmanifest?v=stable-v16" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
     <script>
@@ -47,6 +48,15 @@
           document.documentElement.classList.add('legacy-ipad');
         }
         var displayRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('display') : '';
+        var appRequest = window.URLSearchParams ? new URLSearchParams(location.search).get('app') : '';
+        var installedApp = appRequest === '1'
+          || navigator.standalone === true
+          || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+          || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+        if (installedApp) {
+          document.documentElement.dataset.appMode = 'installed';
+          document.documentElement.classList.add('app-installed');
+        }
         var savedDisplay = localStorage.getItem('gibly-skylanders-display-mode');
         var requestedDisplay = displayRequest === 'tv' || displayRequest === 'ipad' || displayRequest === 'standard'
           ? displayRequest
@@ -56,17 +66,17 @@
           document.documentElement.dataset.displayMode = preferredDisplay;
         }
         if (preferredDisplay === 'ipad') {
-          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v14';
+          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v16';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v14">
-    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v14">
-    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v14">
-    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v14">
-    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v14">
-    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v14">
-    <script type="module" src="src/app.js?v=stable-v14"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v16">
+    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v16">
+    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v16">
+    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v16">
+    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v16">
+    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v16">
+    <script type="module" src="src/app.js?v=stable-v16"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -172,9 +182,9 @@
 
         <section class="view" data-view="catalog">
           <div class="catalog-shell" data-master-catalog>
-            <section class="vault-loading" aria-live="polite">
-              <span></span>
-              <div><strong>Loading the complete collection</strong><small>Six games · 640 individual cards</small></div>
+            <section class="vault-launch" aria-label="Skylanders Vault">
+              <img src="public/app-icon-192.png" width="72" height="72" alt="">
+              <div><strong>Skylanders Vault</strong><small>Your complete collection lives on this device.</small></div>
             </section>
           </div>
         </section>
@@ -199,8 +209,8 @@
               <ol><li><strong>Find its release game</strong><span>Shown on every Vault card.</span></li><li><strong>Check “Works with”</strong><span>Exact supported games are listed.</span></li><li><strong>Use the matching Portal</strong><span>Portal requirements remain hardware-specific.</span></li></ol>
             </section>
             <section class="specialized-tools-panel">
-              <div><p class="eyebrow">Installable offline app</p><h3>Install once, browse offline, mirror when ready.</h3><p>Use Install App for a standalone full-screen Vault with its own icon and offline application shell. Download the complete card library whenever you want every artwork stored locally. The Display button switches between standard, iPad, and TV layouts; Screen Mirroring sends it through AirPlay.</p></div>
-              <div><button class="button" type="button" data-install-guide>Install App</button><button class="button" type="button" data-offline-library-guide>Download Complete Library</button></div>
+              <div><p class="eyebrow">Dedicated offline app</p><h3>Install once. Open instantly.</h3><p>The installed Vault quietly stores the complete interface and card library on the device. Collection sync and personal photo backup use the internet when available; browsing, searching, and collection editing keep working offline. The Display button switches between standard, iPad, and TV layouts for AirPlay.</p></div>
+              <div><button class="button" type="button" data-install-guide>Install App</button><button class="button" type="button" data-offline-library-guide>Repair Offline Library</button></div>
             </section>
             <section class="specialized-tools-panel">
               <div><p class="eyebrow">Optional specialized tools</p><h3>Trap Team workspace</h3><p>The villain board and physical Trap rack are preserved here without taking over the full-series experience.</p></div>

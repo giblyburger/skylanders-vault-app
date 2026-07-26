@@ -157,6 +157,8 @@ villains.forEach((villain) => check(Boolean(elements[villain.element]), `Villain
 const requiredStaticPaths = new Set();
 for (const appManifest of [manifest, ipadManifest]) {
   check(appManifest.display === 'standalone', `${appManifest.name} is not configured as a standalone app.`);
+  check(String(appManifest.start_url || '').includes('app=1'), `${appManifest.name} does not launch in installed-app mode.`);
+  check(Array.isArray(appManifest.display_override) && appManifest.display_override.includes('fullscreen'), `${appManifest.name} is missing a fullscreen app override.`);
   for (const icon of appManifest.icons || []) {
     const base = appManifest === ipadManifest ? 'public' : '';
     requiredStaticPaths.add([base, icon.src].filter(Boolean).join('/'));
@@ -164,6 +166,15 @@ for (const appManifest of [manifest, ipadManifest]) {
 }
 
 const swSource = await readFile(resolve(ROOT, 'sw.js'), 'utf8');
+const indexSource = await readFile(resolve(ROOT, 'index.html'), 'utf8');
+const appSource = await readFile(resolve(ROOT, 'src/app.js'), 'utf8');
+const finalCssSource = await readFile(resolve(ROOT, 'src/styles/final-complete-v9.css'), 'utf8');
+check(/event\.request\.mode === 'navigate'[\s\S]{0,180}cacheFirst/.test(swSource), 'Installed navigation is not local-first.');
+check(indexSource.includes("dataset.appMode = 'installed'"), 'The installed-app launch marker is missing.');
+check(appSource.includes('requestAutomaticOfflineLibrary'), 'The installed app does not automatically store its offline library.');
+check(appSource.includes('navigator.storage?.persist?.()'), 'The installed app does not request durable local storage.');
+check(finalCssSource.includes('touch-action: pan-y pinch-zoom'), 'The installed app is not locked against horizontal touch panning.');
+check(finalCssSource.includes('overscroll-behavior-x: none'), 'Horizontal overscroll protection is missing.');
 const coreBlock = swSource.match(/const CORE_ASSETS = \[([\s\S]*?)\];/)?.[1] || '';
 for (const match of coreBlock.matchAll(/['"](\.\/[^'"]+)['"]/g)) {
   const relativePath = match[1].replace(/^\.\//, '').split('?')[0];

@@ -8,7 +8,22 @@ html,
 body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+}
+
+body {
+  position: relative;
+}
+
+html[data-app-mode="installed"],
+html[data-app-mode="installed"] body {
+  min-height: 100%;
+  background: #030303;
+}
+
+html[data-app-mode="installed"] body {
+  touch-action: pan-y pinch-zoom;
 }
 
 body,
@@ -21,6 +36,66 @@ body,
 .catalog-grid {
   min-width: 0;
   max-width: 100%;
+}
+
+.app-shell,
+.app-header,
+.view-tabs,
+.view,
+.catalog-shell,
+.series-guide,
+.tools-shell {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+html[data-app-mode="installed"] [data-install],
+html[data-app-mode="installed"] [data-offline-library] {
+  display: none !important;
+}
+
+.vault-launch {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 15px;
+  min-height: 180px;
+  padding: clamp(24px, 7vw, 48px);
+  border: 1px solid rgba(229, 191, 119, 0.16);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 14% 20%, rgba(205, 143, 69, 0.11), transparent 28%),
+    linear-gradient(145deg, #120d0d, #060607 68%);
+  color: #f6f1e8;
+}
+
+.vault-launch img {
+  width: 58px;
+  height: 58px;
+  border-radius: 15px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42);
+}
+
+.vault-launch div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.vault-launch strong {
+  font-size: clamp(1.25rem, 4.5vw, 2rem);
+  letter-spacing: -0.035em;
+}
+
+.vault-launch small {
+  color: #aaa198;
+  line-height: 1.45;
 }
 
 .catalog-card__photo,
@@ -422,6 +497,44 @@ html[data-display-mode="ipad"] .series-navigation .series-nav__guide {
 }
 
 @media (max-width: 620px) {
+  .header-actions {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible !important;
+  }
+
+  .header-actions > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .catalog-detail__jump {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible !important;
+  }
+
+  .catalog-detail__jump a {
+    min-width: 0;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .dialog-shell,
+  .catalog-dialog {
+    width: calc(100% - 12px) !important;
+    max-width: calc(100% - 12px) !important;
+    margin-right: auto;
+    margin-left: auto;
+    overflow-x: hidden !important;
+  }
+
   .tools-tabs {
     position: static;
     display: grid !important;

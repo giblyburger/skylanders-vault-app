@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v14';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v14';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v14';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v16';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v16';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v16';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -59,6 +59,7 @@ const SPECIAL_RELEASE_GAMES = {
   'Sir Hoodington': 'Imaginators',
   'Spyro - E3, 2011': "Spyro's Adventure"
 };
+const INSTALLED_APP = document.documentElement.dataset.appMode === 'installed';
 
 const app = {
   elements: {},
@@ -84,6 +85,8 @@ const app = {
   placementTimer: null
 };
 let offlineRegistration = null;
+let offlineAutoRequested = false;
+let offlineDownloadSilent = false;
 
 const refs = {
   appRoot: document.querySelector('[data-app-root]'),
@@ -203,7 +206,7 @@ async function init() {
 }
 
 async function loadJson(url) {
-  const response = await fetch(url, { cache: 'no-cache' });
+  const response = await fetch(url, { cache: INSTALLED_APP ? 'force-cache' : 'no-cache' });
   if (!response.ok) throw new Error('Could not load ' + url);
   return response.json();
 }
@@ -529,7 +532,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v14' : 'manifest.webmanifest?v=stable-v14';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v16' : 'manifest.webmanifest?v=stable-v16';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -897,7 +900,11 @@ function setupInstallPrompt() {
   const appleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = window.navigator.standalone === true
-    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+    || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches)
+    || INSTALLED_APP;
+
+  if (standalone) refs.installButton.hidden = true;
 
   if (appleMobile && !standalone) {
     refs.installButton.hidden = false;
@@ -954,6 +961,11 @@ function registerServiceWorker() {
     refs.offlineButton.hidden = true;
     return;
   }
+  refs.offlineButton.hidden = INSTALLED_APP;
+  if (INSTALLED_APP) {
+    navigator.storage?.persist?.().catch(() => false);
+    window.addEventListener('online', requestAutomaticOfflineLibrary);
+  }
   navigator.serviceWorker.addEventListener('message', handleOfflineLibraryMessage);
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     navigator.serviceWorker.ready.then((registration) => {
@@ -961,11 +973,15 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=stable-v14', { updateViaCache: 'none' })
+  const registrationTask = INSTALLED_APP
+    ? navigator.serviceWorker.getRegistration()
+        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v16', { updateViaCache: 'none' }))
+    : navigator.serviceWorker.register('sw.js?v=stable-v16', { updateViaCache: 'none' });
+  registrationTask
     .then((registration) => {
       offlineRegistration = registration;
-      refs.offlineButton.hidden = false;
-      registration.update();
+      refs.offlineButton.hidden = INSTALLED_APP;
+      if (!INSTALLED_APP) registration.update();
       return navigator.serviceWorker.ready;
     })
     .then((registration) => {
@@ -975,21 +991,32 @@ function registerServiceWorker() {
     .catch(() => {});
 }
 
-async function downloadOfflineLibrary() {
+async function downloadOfflineLibrary(options = {}) {
+  const silent = Boolean(options.silent);
   if (refs.offlineButton.dataset.ready === 'true') {
-    showToast('The complete offline library is already downloaded');
+    if (!silent) showToast('The complete offline library is already downloaded');
     return;
   }
+  offlineDownloadSilent = silent;
   refs.offlineButton.disabled = true;
-  setOfflineButtonLabel('Preparing…');
+  if (!silent) setOfflineButtonLabel('Preparing…');
   try {
     offlineRegistration = offlineRegistration || await navigator.serviceWorker.ready;
     postOfflineMessage({ type: 'DOWNLOAD_OFFLINE_LIBRARY' });
   } catch {
     refs.offlineButton.disabled = false;
-    setOfflineButtonLabel('Try Offline Download');
-    showToast('Offline download could not start');
+    offlineAutoRequested = false;
+    if (!silent) {
+      setOfflineButtonLabel('Try Offline Download');
+      showToast('Offline download could not start');
+    }
   }
+}
+
+function requestAutomaticOfflineLibrary() {
+  if (!INSTALLED_APP || offlineAutoRequested || refs.offlineButton.dataset.ready === 'true') return;
+  offlineAutoRequested = true;
+  window.setTimeout(() => downloadOfflineLibrary({ silent: true }), 500);
 }
 
 function postOfflineMessage(message) {
@@ -1005,6 +1032,7 @@ function handleOfflineLibraryMessage(event) {
     refs.offlineButton.dataset.ready = message.complete ? 'true' : 'false';
     refs.offlineButton.setAttribute('aria-pressed', String(Boolean(message.complete)));
     setOfflineButtonLabel(message.complete ? 'Offline Ready' : 'Download Offline');
+    if (!message.complete) requestAutomaticOfflineLibrary();
   }
   if (message.type === 'OFFLINE_LIBRARY_PROGRESS') {
     const percent = Math.max(0, Math.min(100, Number(message.percent) || 0));
@@ -1020,12 +1048,17 @@ function handleOfflineLibraryMessage(event) {
     refs.offlineButton.style.setProperty('--offline-progress', '100%');
     refs.offlineButton.setAttribute('aria-pressed', 'true');
     setOfflineButtonLabel('Offline Ready');
-    showToast('Full Vault downloaded — it now works without internet');
+    if (!offlineDownloadSilent) showToast('Full Vault downloaded — it now works without internet');
+    offlineDownloadSilent = false;
   }
   if (message.type === 'OFFLINE_LIBRARY_ERROR') {
     refs.offlineButton.disabled = false;
-    setOfflineButtonLabel('Retry Offline Download');
-    showToast('The offline download paused. Tap to retry.');
+    offlineAutoRequested = false;
+    if (!offlineDownloadSilent) {
+      setOfflineButtonLabel('Retry Offline Download');
+      showToast('The offline download paused. Tap to retry.');
+    }
+    offlineDownloadSilent = false;
   }
 }
 
