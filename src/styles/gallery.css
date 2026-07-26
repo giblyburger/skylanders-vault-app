@@ -5771,6 +5771,61 @@ html[data-display-mode="ipad"] .catalog-progress article::before {
   min-height: 46px;
 }
 
+.app-update-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-update-panel::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: #79d8e7;
+  box-shadow: 0 0 18px rgba(121, 216, 231, 0.55);
+  content: "";
+  opacity: 0.75;
+}
+
+.app-update-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 17px;
+}
+
+.app-update-meta span {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #a5a5ad;
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.69rem;
+  font-weight: 780;
+  letter-spacing: 0.025em;
+}
+
+.app-update-panel[data-state="available"]::before {
+  background: #60bf58;
+  box-shadow: 0 0 22px rgba(96, 191, 88, 0.75);
+}
+
+.app-update-panel[data-state="available"] [data-app-update-status] {
+  border-color: rgba(96, 191, 88, 0.35);
+  color: #a9e5a4;
+  background: rgba(96, 191, 88, 0.09);
+}
+
+.app-update-panel[data-state="checking"] [data-app-update-status] {
+  color: #b9e8ef;
+}
+
+.app-update-panel[data-state="error"] [data-app-update-status],
+.app-update-panel[data-state="offline"] [data-app-update-status] {
+  color: #d8aa7f;
+}
+
 /* Older Safari fallbacks for a jailbroken iPad Mini 4. */
 .catalog-card__trading-header {
   top: 4.2%;

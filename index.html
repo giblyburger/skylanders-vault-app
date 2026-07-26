@@ -19,7 +19,7 @@
     <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
     <meta name="twitter:image" content="public/vault-social-v2.png">
     <title>Gibly's Skylanders Master Vault</title>
-    <link rel="manifest" href="manifest.webmanifest?v=stable-v18" data-app-manifest>
+    <link rel="manifest" href="manifest.webmanifest?v=stable-v19" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
     <script>
@@ -72,17 +72,17 @@
           document.documentElement.dataset.displayMode = preferredDisplay;
         }
         if (preferredDisplay === 'ipad') {
-          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v18';
+          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v19';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v18">
-    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v18">
-    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v18">
-    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v18">
-    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v18">
-    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v18">
-    <script type="module" src="src/app.js?v=stable-v18"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v19">
+    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v19">
+    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v19">
+    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v19">
+    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v19">
+    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v19">
+    <script type="module" src="src/app.js?v=stable-v19"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -217,6 +217,22 @@
             <section class="specialized-tools-panel">
               <div><p class="eyebrow">Dedicated offline app</p><h3>Install once. Open instantly.</h3><p>The installed Vault quietly stores the complete interface and card library on the device. Collection sync and personal photo backup use the internet when available; browsing, searching, and collection editing keep working offline. The Display button switches between standard, iPad, and TV layouts for AirPlay.</p></div>
               <div><button class="button" type="button" data-install-guide>Install App</button><button class="button" type="button" data-offline-library-guide>Repair Offline Library</button></div>
+            </section>
+            <section class="specialized-tools-panel app-update-panel" data-app-update-panel data-state="current">
+              <div>
+                <p class="eyebrow">iPad app updates</p>
+                <h3>Stay current without losing your Vault.</h3>
+                <p>Check for the newest verified IPA whenever you are online. Your collection remains stored separately from the bundled app, but export a backup before replacing an installed build.</p>
+                <div class="app-update-meta">
+                  <span data-app-version>Version 1.1.0</span>
+                  <span data-app-update-status role="status" aria-live="polite">Ready to check</span>
+                </div>
+              </div>
+              <div>
+                <button class="button" type="button" data-check-app-update>Check for Update</button>
+                <button class="button" type="button" data-update-backup>Export Backup</button>
+                <a class="button button--primary" data-download-app-update href="#" target="_blank" rel="noopener" hidden>Download Verified IPA</a>
+              </div>
             </section>
             <section class="specialized-tools-panel">
               <div><p class="eyebrow">Optional specialized tools</p><h3>Trap Team workspace</h3><p>The villain board and physical Trap rack are preserved here without taking over the full-series experience.</p></div>

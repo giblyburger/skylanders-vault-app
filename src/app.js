@@ -2,15 +2,19 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v18';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v18';
-import { createCloudSync } from './components/CloudSync.js?v=stable-v18';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v19';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v19';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v19';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
 const STORAGE_KEY = 'gibly-skylanders-master-v5';
 const DISPLAY_MODE_KEY = 'gibly-skylanders-display-mode';
 const FRESH_START_KEY = 'gibly-skylanders-fresh-start-2026-07-21';
+const UPDATE_CHECK_KEY = 'gibly-skylanders-update-check-v1';
+const APP_VERSION = '1.1.0';
+const RELEASE_ENDPOINT = 'https://api.github.com/repos/giblyburger/skylanders-vault-app/releases/latest';
+const UPDATE_CHECK_INTERVAL = 24 * 60 * 60 * 1000;
 const PREVIOUS_STORAGE_KEYS = [
   'gibly-skylanders-master-v4',
   'gibly-trap-team-tracker-v3',
@@ -124,7 +128,13 @@ const refs = {
   toast: document.querySelector('[data-toast]'),
   boardStage: document.querySelector('[data-board-stage]'),
   boardShell: document.querySelector('[data-board-shell]'),
-  syncStatus: document.querySelector('[data-sync-status]')
+  syncStatus: document.querySelector('[data-sync-status]'),
+  updatePanel: document.querySelector('[data-app-update-panel]'),
+  updateVersion: document.querySelector('[data-app-version]'),
+  updateStatus: document.querySelector('[data-app-update-status]'),
+  updateButton: document.querySelector('[data-check-app-update]'),
+  updateBackup: document.querySelector('[data-update-backup]'),
+  updateDownload: document.querySelector('[data-download-app-update]')
 };
 
 applyInitialDisplayMode();
@@ -200,6 +210,7 @@ async function init() {
     });
     app.cloudSync.start();
     registerServiceWorker();
+    setupAppUpdates();
   } catch (error) {
     showFatal(error);
   }
@@ -429,6 +440,8 @@ function wireEvents() {
   document.querySelector('[data-install-guide]')?.addEventListener('click', () => refs.installButton.click());
   refs.offlineButton.addEventListener('click', downloadOfflineLibrary);
   document.querySelector('[data-offline-library-guide]')?.addEventListener('click', downloadOfflineLibrary);
+  refs.updateButton?.addEventListener('click', () => checkForAppUpdate({ manual: true }));
+  refs.updateBackup?.addEventListener('click', exportBackup);
   refs.syncStatus?.addEventListener('click', () => {
     if (refs.syncStatus.dataset.state === 'locked') openPairingDialog();
   });
@@ -532,7 +545,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v18' : 'manifest.webmanifest?v=stable-v18';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v19' : 'manifest.webmanifest?v=stable-v19';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -975,8 +988,8 @@ function registerServiceWorker() {
   });
   const registrationTask = INSTALLED_APP
     ? navigator.serviceWorker.getRegistration()
-        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v18', { updateViaCache: 'none' }))
-    : navigator.serviceWorker.register('sw.js?v=stable-v18', { updateViaCache: 'none' });
+        .then((registration) => registration || navigator.serviceWorker.register('sw.js?v=stable-v19', { updateViaCache: 'none' }))
+    : navigator.serviceWorker.register('sw.js?v=stable-v19', { updateViaCache: 'none' });
   registrationTask
     .then((registration) => {
       offlineRegistration = registration;
@@ -1017,6 +1030,87 @@ function requestAutomaticOfflineLibrary() {
   if (!INSTALLED_APP || offlineAutoRequested || refs.offlineButton.dataset.ready === 'true') return;
   offlineAutoRequested = true;
   window.setTimeout(() => downloadOfflineLibrary({ silent: true }), 500);
+}
+
+function setupAppUpdates() {
+  if (!refs.updatePanel) return;
+  refs.updateVersion.textContent = `Installed version ${APP_VERSION}`;
+  setAppUpdateState('current', 'Ready to check');
+  scheduleStaleAppUpdateCheck();
+  window.addEventListener('online', scheduleStaleAppUpdateCheck);
+}
+
+function scheduleStaleAppUpdateCheck() {
+  let lastCheck = 0;
+  try { lastCheck = Number(localStorage.getItem(UPDATE_CHECK_KEY) || 0); } catch {}
+  if (navigator.onLine && Date.now() - lastCheck >= UPDATE_CHECK_INTERVAL) {
+    window.setTimeout(() => checkForAppUpdate(), 2400);
+  }
+}
+
+async function checkForAppUpdate(options = {}) {
+  if (!refs.updatePanel || refs.updateButton?.disabled) return;
+  const manual = Boolean(options.manual);
+  if (!navigator.onLine) {
+    setAppUpdateState('offline', 'Connect to the internet to check');
+    if (manual) showToast('Connect to the internet to check for an app update');
+    return;
+  }
+
+  refs.updateButton.disabled = true;
+  refs.updateButton.textContent = 'Checking…';
+  setAppUpdateState('checking', 'Checking the verified release…');
+  try {
+    const response = await fetch(RELEASE_ENDPOINT, {
+      cache: 'no-store',
+      headers: { accept: 'application/vnd.github+json' }
+    });
+    if (!response.ok) throw new Error('Update service unavailable');
+    const release = await response.json();
+    const latestVersion = normalizeAppVersion(release?.tag_name);
+    const ipa = (release?.assets || []).find((asset) => asset?.name === 'Skylanders-Vault-unsigned.ipa');
+    if (!latestVersion || !ipa?.browser_download_url) throw new Error('Verified IPA not found');
+    try { localStorage.setItem(UPDATE_CHECK_KEY, String(Date.now())); } catch {}
+
+    if (isNewerAppVersion(latestVersion, APP_VERSION)) {
+      refs.updateDownload.href = ipa.browser_download_url;
+      refs.updateDownload.hidden = false;
+      refs.updateDownload.textContent = `Download ${latestVersion} IPA`;
+      setAppUpdateState('available', `Version ${latestVersion} is ready`);
+      if (manual) showToast(`Skylanders Vault ${latestVersion} is ready to download`);
+    } else {
+      refs.updateDownload.hidden = true;
+      refs.updateDownload.removeAttribute('href');
+      setAppUpdateState('current', `Version ${APP_VERSION} is up to date`);
+      if (manual) showToast('You already have the newest Skylanders Vault');
+    }
+  } catch {
+    setAppUpdateState('error', 'Could not check right now');
+    if (manual) showToast('The update check could not connect. Try again shortly.');
+  } finally {
+    refs.updateButton.disabled = false;
+    refs.updateButton.textContent = 'Check Again';
+  }
+}
+
+function setAppUpdateState(state, message) {
+  if (refs.updatePanel) refs.updatePanel.dataset.state = state;
+  if (refs.updateStatus) refs.updateStatus.textContent = message;
+}
+
+function normalizeAppVersion(value) {
+  const match = String(value || '').match(/(?:ios-)?v?(\d+\.\d+\.\d+)/i);
+  return match ? match[1] : '';
+}
+
+function isNewerAppVersion(candidate, current) {
+  const candidateParts = candidate.split('.').map(Number);
+  const currentParts = current.split('.').map(Number);
+  for (let index = 0; index < 3; index += 1) {
+    if (candidateParts[index] > currentParts[index]) return true;
+    if (candidateParts[index] < currentParts[index]) return false;
+  }
+  return false;
 }
 
 function postOfflineMessage(message) {

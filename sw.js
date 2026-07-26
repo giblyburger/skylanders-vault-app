@@ -1,4 +1,4 @@
-const CORE_CACHE_NAME = 'gibly-core-stable-v18';
+const CORE_CACHE_NAME = 'gibly-core-stable-v19';
 const LIBRARY_CACHE_NAME = 'gibly-offline-library-v4';
 const LIBRARY_REVISION = 'complete-card-library-2026-07-25-v4';
 const LIBRARY_STATUS_URL = './offline-library-status.json';
@@ -15,22 +15,22 @@ const CORE_ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './public/manifest-ipad.webmanifest',
-  './src/app.js?v=stable-v18',
+  './src/app.js?v=stable-v19',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=stable-v18',
-  './src/components/FeatureSuite.js?v=stable-v18',
-  './src/components/CloudSync.js?v=stable-v18',
-  './src/styles/gallery.css?v=stable-v18',
-  './src/styles/card-v2.css?v=stable-v18',
-  './src/styles/card-v3.css?v=stable-v18',
-  './src/styles/feature-suite.css?v=stable-v18',
-  './src/styles/theme-warm-v4.css?v=stable-v18',
-  './src/styles/final-complete-v9.css?v=stable-v18',
+  './src/components/MasterCatalog.js?v=stable-v19',
+  './src/components/FeatureSuite.js?v=stable-v19',
+  './src/components/CloudSync.js?v=stable-v19',
+  './src/styles/gallery.css?v=stable-v19',
+  './src/styles/card-v2.css?v=stable-v19',
+  './src/styles/card-v3.css?v=stable-v19',
+  './src/styles/feature-suite.css?v=stable-v19',
+  './src/styles/theme-warm-v4.css?v=stable-v19',
+  './src/styles/final-complete-v9.css?v=stable-v19',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',
@@ -74,6 +74,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
 
   if (requestUrl.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));

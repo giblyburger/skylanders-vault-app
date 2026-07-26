@@ -16,14 +16,17 @@ function pngDimensions(buffer) {
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
-const [packageJson, capacitorConfig, projectFile, infoPlist, workflow, cloudSync, masterCatalog] = await Promise.all([
+const [packageJson, capacitorConfig, projectFile, infoPlist, workflow, appSource, cloudSync, masterCatalog, serviceWorker, indexHtml] = await Promise.all([
   read('package.json').then(JSON.parse),
   read('capacitor.config.json').then(JSON.parse),
   read('ios/App/App.xcodeproj/project.pbxproj'),
   read('ios/App/App/Info.plist'),
   read('.github/workflows/build-ios-ipa.yml'),
+  read('src/app.js'),
   read('src/components/CloudSync.js'),
-  read('src/components/MasterCatalog.js')
+  read('src/components/MasterCatalog.js'),
+  read('sw.js'),
+  read('index.html')
 ]);
 
 check(packageJson.dependencies?.['@capacitor/core'] === '6.2.1', 'Capacitor core must remain pinned to the iOS 13-compatible 6.2.1 release.');
@@ -35,12 +38,19 @@ check(capacitorConfig.plugins?.CapacitorHttp?.enabled === true, 'Native HTTP sup
 check(capacitorConfig.plugins?.CapacitorCookies?.enabled === true, 'Native cookie support must remain enabled for paired-device sessions.');
 check((projectFile.match(/IPHONEOS_DEPLOYMENT_TARGET = 13\.0;/g) || []).length >= 2, 'iOS 13 deployment support is missing.');
 check((projectFile.match(/PRODUCT_BUNDLE_IDENTIFIER = com\.gibly\.skylandersvault;/g) || []).length === 2, 'Native bundle ID is not applied to both build configurations.');
+check((projectFile.match(/MARKETING_VERSION = 1\.1\.0;/g) || []).length === 2, 'Native marketing version must match app version 1.1.0.');
+check((projectFile.match(/CURRENT_PROJECT_VERSION = 2;/g) || []).length === 2, 'Native build number must be 2.');
 check(infoPlist.includes('<string>Skylanders Vault</string>'), 'Native display name is missing.');
 check(infoPlist.includes('<key>NSCameraUsageDescription</key>'), 'Camera permission text is missing.');
 check(infoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>'), 'Photo-library permission text is missing.');
 check(infoPlist.includes('<key>WKAppBoundDomains</key>') && infoPlist.includes('gibly-skylanders-vault.neumanng98.chatgpt.site'), 'The private sync host is missing from the iOS app-bound domains.');
 check(workflow.includes('CODE_SIGNING_ALLOWED=NO'), 'Unsigned IPA workflow must disable code signing.');
 check(workflow.includes('Skylanders-Vault-unsigned.ipa'), 'IPA workflow output name is missing.');
+check(appSource.includes("const APP_VERSION = '1.1.0';"), 'In-app update version does not match the native release.');
+check(appSource.includes('releases/latest') && appSource.includes('Skylanders-Vault-unsigned.ipa'), 'Verified release update checking is missing.');
+check(indexHtml.includes('data-app-update-panel') && indexHtml.includes('data-download-app-update'), 'The in-app update controls are missing.');
+check(serviceWorker.includes("gibly-core-stable-v19"), 'The update release must use the stable-v19 cache.');
+check(serviceWorker.includes('requestUrl.origin !== self.location.origin'), 'External release checks must bypass the offline asset cache.');
 check(cloudSync.includes("['capacitor:', 'ionic:'].includes(location.protocol)"), 'Native runtime detection is missing.');
 check(cloudSync.includes('Bearer ${nativeSession}'), 'Native authenticated sync is missing.');
 check(masterCatalog.includes('resolveCloudResourceUrl(photo.url)'), 'Native personal-photo URL resolution is missing.');
@@ -90,4 +100,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Native audit passed: iOS 13 wrapper, app artwork, unsigned IPA workflow, CORS, pairing, and photo routing are ready.');
+console.log('Native audit passed: iOS 13 wrapper, app artwork, signed-off update checker, unsigned IPA workflow, sync, and photo routing are ready.');
