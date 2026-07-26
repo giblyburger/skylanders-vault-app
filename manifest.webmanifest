@@ -1,6 +1,7 @@
 {
   "name": "Gibly's Skylanders Vault",
   "short_name": "Skylanders Vault",
+  "id": "./",
   "description": "An offline-first 640-piece Skylanders collection vault with complete card artwork, local collecting, optional cloud syncing, and an iPad display mode.",
   "start_url": ".",
   "scope": "./",
@@ -8,6 +9,7 @@
   "orientation": "any",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "iPad Display",
@@ -17,6 +19,12 @@
     }
   ],
   "icons": [
+    {
+      "src": "public/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "public/app-icon-512.png",
       "sizes": "512x512",

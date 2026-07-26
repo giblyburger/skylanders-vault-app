@@ -2,9 +2,9 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=complete-v9';
-import { createFeatureSuite } from './components/FeatureSuite.js?v=complete-v9';
-import { createCloudSync } from './components/CloudSync.js?v=complete-v9';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=stable-v10';
+import { createFeatureSuite } from './components/FeatureSuite.js?v=stable-v10';
+import { createCloudSync } from './components/CloudSync.js?v=stable-v10';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -20,7 +20,7 @@ const DATA_URLS = {
   elements: 'src/data/elements.json',
   villains: 'src/data/villains.json',
   traps: 'src/data/traps.json',
-  catalog: 'src/data/master-catalog.json'
+  catalog: 'src/data/catalog.json'
 };
 const UNRELEASED_CARD_IDS = new Set([
   'catalog-11513604',
@@ -76,6 +76,8 @@ const refs = {
   resetButton: document.querySelector('[data-reset]'),
   displayModeButton: document.querySelector('[data-display-mode-button]'),
   installButton: document.querySelector('[data-install]'),
+  installSheet: document.querySelector('[data-install-sheet]'),
+  installClose: Array.from(document.querySelectorAll('[data-install-close]')),
   offlineButton: document.querySelector('[data-offline-library]'),
   pairingDialog: document.querySelector('[data-pairing-dialog]'),
   pairingForm: document.querySelector('[data-pairing-form]'),
@@ -337,6 +339,7 @@ function wireEvents() {
   refs.resetButton.addEventListener('click', resetProgress);
   refs.displayModeButton.addEventListener('click', toggleDisplayMode);
   document.querySelector('[data-display-mode-button-guide]')?.addEventListener('click', toggleDisplayMode);
+  document.querySelector('[data-install-guide]')?.addEventListener('click', () => refs.installButton.click());
   refs.offlineButton.addEventListener('click', downloadOfflineLibrary);
   document.querySelector('[data-offline-library-guide]')?.addEventListener('click', downloadOfflineLibrary);
   refs.syncStatus?.addEventListener('click', () => {
@@ -442,7 +445,7 @@ function applyDisplayMode(requestedMode, options = {}) {
   if (refs.appRoot) refs.appRoot.dataset.displayMode = mode;
   if (mode === 'tv') app.catalogController?.setLayout('cards');
   const manifest = document.querySelector('[data-app-manifest]');
-  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest' : 'manifest.webmanifest';
+  if (manifest) manifest.href = mode === 'ipad' ? 'public/manifest-ipad.webmanifest?v=stable-v10' : 'manifest.webmanifest?v=stable-v10';
 
   if (refs.displayModeButton) {
     const active = mode !== 'standard';
@@ -815,24 +818,50 @@ function setupInstallPrompt() {
   if (appleMobile && !standalone) {
     refs.installButton.hidden = false;
     const label = refs.installButton.querySelector('span');
-    if (label) label.textContent = 'Add to Home';
+    if (label) label.textContent = 'Install App';
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
     refs.installButton.hidden = false;
+    const label = refs.installButton.querySelector('span');
+    if (label) label.textContent = 'Install App';
   });
 
   refs.installButton.addEventListener('click', async () => {
     if (!deferredPrompt) {
-      if (appleMobile) showToast('In Safari, tap Share, then Add to Home Screen.');
+      if (appleMobile && refs.installSheet) {
+        refs.installSheet.hidden = false;
+        document.body.classList.add('install-sheet-open');
+        refs.installSheet.querySelector('[data-install-close]')?.focus();
+      }
       return;
     }
     deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
+    const choice = await deferredPrompt.userChoice;
     deferredPrompt = null;
+    if (choice?.outcome === 'accepted') refs.installButton.hidden = true;
+  });
+
+  refs.installClose.forEach((button) => {
+    button.addEventListener('click', () => {
+      refs.installSheet.hidden = true;
+      document.body.classList.remove('install-sheet-open');
+      refs.installButton.focus();
+    });
+  });
+  refs.installSheet?.addEventListener('click', (event) => {
+    if (event.target === refs.installSheet) {
+      refs.installSheet.hidden = true;
+      document.body.classList.remove('install-sheet-open');
+    }
+  });
+  window.addEventListener('appinstalled', () => {
     refs.installButton.hidden = true;
+    if (refs.installSheet) refs.installSheet.hidden = true;
+    document.body.classList.remove('install-sheet-open');
+    showToast('Skylanders Vault installed');
   });
 }
 
@@ -848,7 +877,7 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=complete-v9', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=stable-v10', { updateViaCache: 'none' })
     .then((registration) => {
       offlineRegistration = registration;
       refs.offlineButton.hidden = false;

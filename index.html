@@ -18,7 +18,7 @@
     <meta name="twitter:description" content="A complete, scan-ready Skylanders collection vault with original card artwork and source-linked facts.">
     <meta name="twitter:image" content="public/vault-social-v2.png">
     <title>Gibly's Skylanders Master Vault</title>
-    <link rel="manifest" href="manifest.webmanifest" data-app-manifest>
+    <link rel="manifest" href="manifest.webmanifest?v=stable-v10" data-app-manifest>
     <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png">
     <link rel="icon" href="public/app-icon.svg" type="image/svg+xml">
     <script>
@@ -56,17 +56,17 @@
           document.documentElement.dataset.displayMode = preferredDisplay;
         }
         if (preferredDisplay === 'ipad') {
-          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest';
+          document.querySelector('[data-app-manifest]').href = 'public/manifest-ipad.webmanifest?v=stable-v10';
         }
       } catch (error) {}
     </script>
-    <link rel="stylesheet" href="src/styles/gallery.css?v=complete-v9">
-    <link rel="stylesheet" href="src/styles/card-v2.css?v=complete-v9">
-    <link rel="stylesheet" href="src/styles/card-v3.css?v=complete-v9">
-    <link rel="stylesheet" href="src/styles/feature-suite.css?v=complete-v9">
-    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=complete-v9">
-    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=complete-v9">
-    <script type="module" src="src/app.js?v=complete-v9"></script>
+    <link rel="stylesheet" href="src/styles/gallery.css?v=stable-v10">
+    <link rel="stylesheet" href="src/styles/card-v2.css?v=stable-v10">
+    <link rel="stylesheet" href="src/styles/card-v3.css?v=stable-v10">
+    <link rel="stylesheet" href="src/styles/feature-suite.css?v=stable-v10">
+    <link rel="stylesheet" href="src/styles/theme-warm-v4.css?v=stable-v10">
+    <link rel="stylesheet" href="src/styles/final-complete-v9.css?v=stable-v10">
+    <script type="module" src="src/app.js?v=stable-v10"></script>
   </head>
   <body>
     <div class="app-shell" data-app-root>
@@ -199,8 +199,8 @@
               <ol><li><strong>Find its debut game</strong><span>Shown on every Vault card.</span></li><li><strong>Check “Works with”</strong><span>Exact supported games are listed.</span></li><li><strong>Use the matching Portal</strong><span>Portal requirements remain hardware-specific.</span></li></ol>
             </section>
             <section class="specialized-tools-panel">
-              <div><p class="eyebrow">iPad + TV display</p><h3>Install once, browse offline, mirror when ready.</h3><p>On iPad, open the Vault in Safari and choose Add to Home Screen. Download the Offline Library for all 640 card images, then use the Display button for the iPad or TV layout. Control Center → Screen Mirroring sends the display through AirPlay; collection changes sync again whenever the iPad is online.</p></div>
-              <div><button class="button" type="button" data-display-mode-button-guide>Switch display mode</button><button class="button" type="button" data-offline-library-guide>Download Offline Library</button></div>
+              <div><p class="eyebrow">Installable offline app</p><h3>Install once, browse offline, mirror when ready.</h3><p>Use Install App for a standalone full-screen Vault with its own icon and offline application shell. Download the complete card library whenever you want every artwork stored locally. The Display button switches between standard, iPad, and TV layouts; Screen Mirroring sends it through AirPlay.</p></div>
+              <div><button class="button" type="button" data-install-guide>Install App</button><button class="button" type="button" data-offline-library-guide>Download Complete Library</button></div>
             </section>
             <section class="specialized-tools-panel">
               <div><p class="eyebrow">Optional specialized tools</p><h3>Trap Team workspace</h3><p>The villain board and physical Trap rack are preserved here without taking over the full-series experience.</p></div>
@@ -214,6 +214,22 @@
         </section>
       </main>
     </div>
+
+    <section class="install-sheet" data-install-sheet hidden role="dialog" aria-modal="true" aria-labelledby="install-sheet-title">
+      <div class="install-sheet__card">
+        <button class="install-sheet__close" type="button" data-install-close aria-label="Close install instructions">&times;</button>
+        <img src="public/app-icon-192.png" width="96" height="96" alt="">
+        <p class="eyebrow">Installable offline app</p>
+        <h2 id="install-sheet-title">Install Skylanders Vault</h2>
+        <p>Apple puts web-app installation inside Safari’s Share menu. Installing creates a standalone Vault app with its own icon, full-screen layout, offline shell, and saved collection access.</p>
+        <ol>
+          <li><strong>Open Safari’s Share menu</strong><span>Tap the square icon with the upward arrow.</span></li>
+          <li><strong>Choose Add to Home Screen</strong><span>This is Apple’s install command for the app.</span></li>
+          <li><strong>Tap Add</strong><span>Launch Skylanders Vault from its new app icon.</span></li>
+        </ol>
+        <button class="button button--primary" type="button" data-install-close>Done</button>
+      </div>
+    </section>
 
     <dialog class="dialog-shell pairing-dialog" data-pairing-dialog aria-labelledby="pairing-title">
       <form class="pairing-card" data-pairing-form>

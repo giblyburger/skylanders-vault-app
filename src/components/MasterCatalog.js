@@ -392,7 +392,8 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
     container.querySelector('[data-catalog-result-count]').textContent = `${filtered.length} individual cards · showing ${visible.length}`;
     const grid = container.querySelector('[data-catalog-grid]');
     grid.dataset.layout = state.layout;
-    grid.innerHTML = visible.map(({ card, record }) => cardMarkup(card, record)).join('') || emptyMarkup();
+    const renderCard = state.layout === 'photos' ? wallCardMarkup : cardMarkup;
+    grid.innerHTML = visible.map(({ card, record }) => renderCard(card, record)).join('') || emptyMarkup();
     container.querySelectorAll('[data-catalog-layout]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.catalogLayout === state.layout));
     });
@@ -544,6 +545,21 @@ export function createMasterCatalog(container, dialog, catalog, callbacks) {
         <button class="button" type="button" data-card-action="wishlist" data-card-id="${card.id}" aria-pressed="${record.wishlist}">${record.wishlist ? '★ Wanted' : '☆ Wishlist'}</button>
         <button class="button button--primary" type="button" data-card-action="add" data-card-id="${card.id}">+ Copy</button>
         <button class="button" type="button" data-card-action="details" data-card-id="${card.id}">All info</button>
+      </div>
+    </article>`;
+  }
+
+  function wallCardMarkup(card, record) {
+    const owned = record.copies.length;
+    const cardArt = wallArtworkUrl(card);
+    return `<article class="catalog-card catalog-card--wall" data-owned="${owned > 0}" data-wishlist="${record.wishlist}" style="--card-el:${elementColor(card.element)}">
+      <div class="catalog-card__visual">
+        <button class="catalog-card__photo" type="button" data-card-action="details" data-card-id="${card.id}" aria-label="Open ${escapeHtml(card.name)} details">
+          <img class="catalog-card__art" loading="lazy" decoding="async" width="320" height="480" src="${escapeHtml(cardArt)}" alt="${escapeHtml(card.name)} generated collector artwork" onload="this.closest('.catalog-card__photo').dataset.loaded='true'" onerror="this.hidden=true;this.nextElementSibling.hidden=false;this.closest('.catalog-card__photo').dataset.loaded='error'">
+          <span class="catalog-card__fallback" hidden aria-hidden="true">${escapeHtml(card.element === 'None' ? card.category.slice(0, 2).toUpperCase() : card.element.slice(0, 2).toUpperCase())}</span>
+          ${owned ? `<span class="catalog-card__owned">Owned · ${owned}</span>` : record.wishlist ? '<span class="catalog-card__owned catalog-card__owned--wanted">Wanted</span>' : ''}
+        </button>
+        <button class="catalog-card__quick-add" type="button" data-card-action="add" data-card-id="${card.id}" aria-label="Add one ${escapeHtml(card.name)} to your vault"><span aria-hidden="true">+</span></button>
       </div>
     </article>`;
   }
