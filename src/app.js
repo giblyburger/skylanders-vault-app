@@ -2,8 +2,8 @@ import { renderSummary, calculateProgress } from './components/ProgressSummary.j
 import { renderVillainBoard } from './components/VillainBoard.js?v=animation-2';
 import { renderTrapRack } from './components/TrapRack.js?v=animation-2';
 import { createTrapEditor } from './components/TrapEditor.js?v=animation-2';
-import { createMasterCatalog } from './components/MasterCatalog.js?v=offline-ipad-v1';
-import { createCloudSync } from './components/CloudSync.js?v=offline-ipad-v1';
+import { createMasterCatalog } from './components/MasterCatalog.js?v=card-frame-v2';
+import { createCloudSync } from './components/CloudSync.js?v=card-frame-v2';
 import { actionIcon } from './components/icons.js?v=animation-2';
 import { ELEMENT_ORDER, STATUS_ORDER, escapeHtml, getTrapRecord, normalizeText } from './components/helpers.js?v=animation-2';
 
@@ -785,7 +785,7 @@ function registerServiceWorker() {
       postOfflineMessage({ type: 'OFFLINE_LIBRARY_STATUS' });
     }).catch(() => {});
   });
-  navigator.serviceWorker.register('sw.js?v=offline-ipad-v1', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('sw.js?v=card-frame-v2', { updateViaCache: 'none' })
     .then((registration) => {
       offlineRegistration = registration;
       refs.offlineButton.hidden = false;

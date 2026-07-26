@@ -1,4 +1,4 @@
-const CORE_CACHE_NAME = 'gibly-core-offline-ipad-v1';
+const CORE_CACHE_NAME = 'gibly-core-card-frame-v2';
 const LIBRARY_CACHE_NAME = 'gibly-offline-library-v1';
 const LIBRARY_REVISION = 'complete-card-library-2026-07-21-v1';
 const LIBRARY_STATUS_URL = './offline-library-status.json';
@@ -15,16 +15,16 @@ const CORE_ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './public/manifest-ipad.webmanifest',
-  './src/app.js?v=offline-ipad-v1',
+  './src/app.js?v=card-frame-v2',
   './src/components/helpers.js?v=animation-2',
   './src/components/icons.js?v=animation-2',
   './src/components/ProgressSummary.js?v=animation-2',
   './src/components/VillainBoard.js?v=animation-2',
   './src/components/TrapRack.js?v=animation-2',
   './src/components/TrapEditor.js?v=animation-2',
-  './src/components/MasterCatalog.js?v=offline-ipad-v1',
-  './src/components/CloudSync.js?v=offline-ipad-v1',
-  './src/styles/gallery.css?v=offline-ipad-v1',
+  './src/components/MasterCatalog.js?v=card-frame-v2',
+  './src/components/CloudSync.js?v=card-frame-v2',
+  './src/styles/gallery.css?v=card-frame-v2',
   './src/data/elements.json',
   './src/data/villains.json',
   './src/data/traps.json',

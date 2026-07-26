@@ -5937,3 +5937,124 @@ html.legacy-ipad .catalog-card {
     height: 100% !important;
   }
 }
+
+/* Card-frame correction: keep interface chrome out of the illustrated panel. */
+.catalog-card__photo,
+.catalog-grid[data-layout="photos"] .catalog-card__photo,
+.catalog-grid[data-layout="cards"] .catalog-card__photo {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  aspect-ratio: 2 / 3 !important;
+  overflow: hidden !important;
+  background: #05070a !important;
+}
+
+.catalog-card__art,
+.catalog-card__photo > img,
+.catalog-grid[data-layout="photos"] .catalog-card__photo > img,
+.catalog-grid[data-layout="cards"] .catalog-card__photo > img {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 0 !important;
+  border-radius: inherit !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  background: #05070a !important;
+  transform: none !important;
+}
+
+.catalog-card__trading-header,
+.catalog-card__serial {
+  display: none !important;
+}
+
+.catalog-grid[data-layout="photos"] .catalog-card__photo-caption {
+  inset: auto 6.8% 2.6% !important;
+  min-height: 10.5% !important;
+  max-height: 11.5% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.catalog-grid[data-layout="photos"] .catalog-card__photo-caption small {
+  color: color-mix(in srgb, var(--card-el) 62%, #d7dde8) !important;
+  font-size: clamp(0.42rem, 0.54vw, 0.58rem) !important;
+  line-height: 1.05 !important;
+}
+
+.catalog-grid[data-layout="photos"] .catalog-card__photo-caption strong {
+  color: #f4f6fa !important;
+  font-size: clamp(0.72rem, 0.9vw, 0.98rem) !important;
+  line-height: 1.05 !important;
+}
+
+.catalog-grid[data-layout="photos"] .catalog-card__photo-caption em,
+.catalog-grid[data-layout="photos"] .catalog-card__photo-caption b {
+  display: none !important;
+}
+
+.catalog-hero__gallery figure {
+  display: block !important;
+  width: 30% !important;
+  aspect-ratio: 2 / 3 !important;
+  overflow: hidden !important;
+}
+
+.catalog-hero__gallery .hero-trading-card__header,
+.catalog-hero__gallery figcaption,
+.catalog-hero__gallery .hero-trading-card__foil {
+  display: none !important;
+}
+
+.catalog-hero__gallery .hero-trading-card__art {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: inherit !important;
+}
+
+.catalog-hero__gallery .hero-trading-card__art img,
+.series-card__art img,
+.catalog-detail__photo-button img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+}
+
+.catalog-detail__photo-button img {
+  height: auto !important;
+  aspect-ratio: 2 / 3 !important;
+}
+
+@media (max-width: 620px) {
+  .catalog-grid[data-layout="photos"] .catalog-card__photo-caption {
+    inset: auto 7% 2.8% !important;
+    min-height: 10% !important;
+  }
+
+  .catalog-grid[data-layout="photos"] .catalog-card__photo-caption small {
+    font-size: 0.36rem !important;
+  }
+
+  .catalog-grid[data-layout="photos"] .catalog-card__photo-caption strong {
+    font-size: clamp(0.58rem, 3vw, 0.76rem) !important;
+  }
+}
